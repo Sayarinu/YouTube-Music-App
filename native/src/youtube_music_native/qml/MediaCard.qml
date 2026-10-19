@@ -36,6 +36,7 @@ FocusScope {
         accent: root.media.accent || Theme.selected
         Rectangle {
             anchors.fill: parent
+            radius: cover.radius
             color: "#33000000"
             visible: hover.hovered || root.activeFocus
             border.color: root.activeFocus ? Theme.accent : "transparent"
