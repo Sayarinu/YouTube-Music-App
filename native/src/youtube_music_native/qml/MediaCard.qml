@@ -70,8 +70,20 @@ FocusScope {
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.playRequested(root.media) }
         }
     }
+    MouseArea {
+        z: 1
+        anchors.top: cover.bottom; anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        cursorShape: Qt.PointingHandCursor
+        onClicked: mouse => {
+            root.forceActiveFocus()
+            if (mouse.button === Qt.RightButton) appState.showMenu(root.media, root.menuContext)
+            else browseState.open(root.media)
+        }
+    }
     Button {
         id: title
+        z: 2
         anchors.top: cover.bottom
         anchors.topMargin: 12
         x: 16; width: parent.width - 32
@@ -107,6 +119,7 @@ FocusScope {
         Text { visible: artistLink.visible; text: "·"; color: Theme.secondary; font.pixelSize: 14; height: metadata.height; verticalAlignment: Text.AlignVCenter }
         Button {
             id: artistLink
+            z: 2
             visible: !!(root.media.artists && root.media.artists.length && root.media.artists[0].id)
             text: visible ? root.media.artists[0].name || root.media.artist || "" : root.media.artist || ""
             height: metadata.height; width: Math.max(0, metadata.width - 72)
