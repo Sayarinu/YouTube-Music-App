@@ -4,17 +4,20 @@ import "Theme.js" as Theme
 IconButton {
     id: root
     required property var media
+    readonly property bool song: media.kind === "song"
+    readonly property string mediaId: media.videoId || media.id || ""
     property var entry: {
         var values = downloadsState.collections
-        for (var i = 0; i < values.length; i++) if (values[i].key === media.kind + ":" + media.id) return values[i]
+        for (var i = 0; i < values.length; i++) if (values[i].key === media.kind + ":" + mediaId) return values[i]
         return ({})
     }
-    iconName: entry.state === "complete" ? "check" : "download"
-    tip: entry.state === "complete" ? "Remove download" : entry.state === "downloading" || entry.state === "queued" ? "Cancel download" : entry.state === "damaged" ? "Repair download" : "Download"
-    iconColor: entry.state === "damaged" ? "#ffb4a6" : "white"
-    enabled: !!media.id
+    readonly property string status: song ? (downloadsState.trackStates[mediaId] || "") : entry.state || ""
+    iconName: status === "complete" || status === "ready" ? "downloadCheck" : "download"
+    tip: status === "complete" || status === "ready" ? "Downloaded" : status === "downloading" || status === "queued" ? "Cancel download" : status === "damaged" ? "Repair download" : "Download"
+    iconColor: status === "damaged" ? "#ffb4a6" : Theme.foreground
+    enabled: !!mediaId && !(song && (status === "complete" || status === "ready") && entry.state !== "complete")
     onClicked: {
-        if (entry.state === "complete") downloadsState.remove(entry.key)
+        if ((entry.state === "complete" || entry.state === "ready") && entry.key) downloadsState.remove(entry.key)
         else if (entry.state === "downloading" || entry.state === "queued") downloadsState.cancel(entry.key)
         else if (entry.key) downloadsState.retry(entry.key)
         else downloadsState.download(media)

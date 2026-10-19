@@ -34,11 +34,11 @@ FocusScope {
     }
     HoverHandler { id: hover }
     MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton; cursorShape: Qt.PointingHandCursor; onClicked: mouse => { if (mouse.button === Qt.RightButton) appState.showMenu(root.media, {}); else root.activated(root.media) } }
-    IconButton {
+    DownloadButton {
+        id: downloadButton
         anchors.right: parent.right; anchors.rightMargin: 40; anchors.verticalCenter: parent.verticalCenter
-        iconName: "download"; tip: "Download " + (root.media.title || "song")
-        visible: hover.hovered || root.activeFocus
-        onClicked: downloadsState.download(root.media)
+        visible: hover.hovered || root.activeFocus || downloadButton.status === "complete" || downloadButton.status === "ready"
+        media: ({kind: "song", id: root.media.videoId || root.media.id || "", videoId: root.media.videoId || "", title: root.media.title || "", thumbnail: root.media.thumbnail || ""})
     }
     IconButton { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; iconName: "more"; tip: "More options for " + (root.media.title || "song"); visible: hover.hovered || root.activeFocus; onClicked: appState.showMenu(root.media, {}) }
 }
