@@ -16,7 +16,7 @@ Rectangle {
         x: 16; width: Math.min(320, root.width * 0.28); height: parent.height
         Cover { id: cover; anchors.verticalCenter: parent.verticalCenter; width: 52; height: 52; radius: 8; source: playerState.currentTrack.thumbnail || ""; mediaKey: playerState.currentTrack.videoId || playerState.currentTrack.id || ""; accent: Theme.selected }
         Column {
-            x: 64; width: parent.width - x - like.width; anchors.verticalCenter: parent.verticalCenter; spacing: 5
+            x: 64; y: parent.height / 2 - 28; width: parent.width - x - like.width; spacing: 20
             Text { width: parent.width; text: playerState.currentTrack.title || "Nothing playing"; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.foreground; font.bold: true; font.pixelSize: 14 }
             Text {
                 width: parent.width
@@ -38,8 +38,25 @@ Rectangle {
         anchors.left: track.right; anchors.leftMargin: 8
         anchors.right: tools.left; anchors.rightMargin: 12
         height: parent.height
+        AccentSlider {
+            id: progress
+            objectName: "playbackSeek"
+            z: -1
+            x: 46; y: 26; width: parent.width - 92; height: 40
+            from: 0; to: 1; value: playerState.progress
+            trackColor: "#574374"
+            enabled: playerState.hasTrack; Accessible.name: "Playback position"
+            onMoved: playerState.seekFraction(value)
+        }
+        Rectangle {
+            x: (parent.width - transport.width - 12) / 2; y: 26
+            width: transport.width + 12; height: 40; radius: 20
+            color: Theme.surface
+            z: 0
+        }
         Row {
-            anchors.horizontalCenter: parent.horizontalCenter; y: 4; spacing: 4
+            id: transport
+            anchors.horizontalCenter: parent.horizontalCenter; y: 24; spacing: 4; z: 1
             IconButton { iconName: "shuffle"; iconColor: playerState.shuffled ? Theme.accent : Theme.secondary; tip: "Shuffle"; enabled: playerState.hasTrack; onClicked: appState.requestAction("shuffle") }
             IconButton { iconName: "previous"; tip: "Previous"; enabled: playerState.hasTrack; onClicked: playerState.previous() }
             IconButton { iconName: playerState.playing ? "pause" : "play"; iconSize: 28; iconColor: Theme.onAccent; tip: playerState.playing ? "Pause" : "Play"; enabled: playerState.hasTrack; onClicked: playerState.togglePlayback(); background: Rectangle { radius: 22; color: parent.hovered ? Theme.accentHover : Theme.accent; border.width: parent.visualFocus ? 2 : 0; border.color: Theme.foreground } }
@@ -47,15 +64,6 @@ Rectangle {
             IconButton { iconName: playerState.repeat === "one" ? "repeatOne" : "repeat"; iconColor: playerState.repeat !== "off" ? Theme.accent : Theme.secondary; tip: "Repeat: " + playerState.repeat; enabled: playerState.hasTrack; onClicked: appState.requestAction("repeat") }
         }
         Text { x: 0; y: 63; width: 38; text: Theme.timeLabel(playerState.position); color: Theme.secondary; font.pixelSize: 11; horizontalAlignment: Text.AlignRight }
-        AccentSlider {
-            id: progress
-            objectName: "playbackSeek"
-            x: 46; y: 48; width: parent.width - 92; height: 40
-            from: 0; to: 1; value: playerState.progress
-            trackColor: "#574374"
-            enabled: playerState.hasTrack; Accessible.name: "Playback position"
-            onMoved: playerState.seekFraction(value)
-        }
         Text { anchors.right: parent.right; y: 63; width: 38; text: Theme.timeLabel(playerState.duration); color: Theme.secondary; font.pixelSize: 11 }
         BusyIndicator { anchors.right: parent.right; y: 10; width: 28; height: 28; visible: playerState.busy; running: visible }
     }
