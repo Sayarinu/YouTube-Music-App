@@ -52,7 +52,7 @@ Rectangle {
             objectName: "playbackSeek"
             x: 46; y: 48; width: parent.width - 92; height: 40
             from: 0; to: 1; value: playerState.progress
-            trackColor: Theme.border
+            trackColor: "#574374"
             enabled: playerState.hasTrack; Accessible.name: "Playback position"
             onMoved: playerState.seekFraction(value)
         }
