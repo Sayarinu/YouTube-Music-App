@@ -26,9 +26,9 @@ Rectangle {
             var cached = downloadsState.artwork[root.mediaKey]
             return cached !== undefined ? cached : root.source
         }
-        onStatusChanged: if (softwareMask.item) softwareMask.item.requestPaint()
-        onPaintedWidthChanged: if (softwareMask.item) softwareMask.item.requestPaint()
-        onPaintedHeightChanged: if (softwareMask.item) softwareMask.item.requestPaint()
+        onStatusChanged: if (softwareMask.active) softwareMask.requestPaint()
+        onPaintedWidthChanged: if (softwareMask.active) softwareMask.requestPaint()
+        onPaintedHeightChanged: if (softwareMask.active) softwareMask.requestPaint()
         asynchronous: true
         fillMode: Image.PreserveAspectCrop
         sourceSize.width: Math.ceil(root.width * Screen.devicePixelRatio)
@@ -36,26 +36,26 @@ Rectangle {
         layer.enabled: root.ready && root.radius > 0 && GraphicsInfo.api !== GraphicsInfo.Software
         layer.effect: MultiEffect { maskEnabled: true; maskSource: roundedMask; autoPaddingEnabled: false }
     }
-    Loader {
+    Canvas {
         id: softwareMask
         anchors.fill: parent
-        active: root.radius > 0 && GraphicsInfo.api === GraphicsInfo.Software
-        sourceComponent: Canvas {
-            id: softwareCanvas
-            antialiasing: true
-            renderTarget: Canvas.Image
-            onWidthChanged: requestPaint()
-            onHeightChanged: requestPaint()
-            Connections { target: root; function onRadiusChanged() { softwareCanvas.requestPaint() } }
-            onPaint: {
-                var ctx = getContext("2d")
-                ctx.reset()
-                if (!root.ready) return
-                ctx.beginPath()
-                ctx.roundedRect(0, 0, width, height, root.radius, root.radius)
-                ctx.clip()
-                ctx.drawImage(artwork, (width - artwork.paintedWidth) / 2, (height - artwork.paintedHeight) / 2, artwork.paintedWidth, artwork.paintedHeight)
-            }
+        readonly property bool active: root.radius > 0 && GraphicsInfo.api === GraphicsInfo.Software
+        visible: active && root.ready
+        antialiasing: true
+        renderTarget: Canvas.Image
+        onVisibleChanged: if (visible) requestPaint()
+        onAvailableChanged: if (available && visible) requestPaint()
+        onWidthChanged: if (active) requestPaint()
+        onHeightChanged: if (active) requestPaint()
+        Connections { target: root; function onRadiusChanged() { if (softwareMask.active) softwareMask.requestPaint() } }
+        onPaint: {
+            if (!visible || !root.ready) return
+            var ctx = getContext("2d")
+            ctx.reset()
+            ctx.beginPath()
+            ctx.roundedRect(0, 0, width, height, root.radius, root.radius)
+            ctx.clip()
+            ctx.drawImage(artwork, (width - artwork.paintedWidth) / 2, (height - artwork.paintedHeight) / 2, artwork.paintedWidth, artwork.paintedHeight)
         }
     }
     Image {
