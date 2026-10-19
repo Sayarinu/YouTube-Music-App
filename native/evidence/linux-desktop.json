@@ -24,6 +24,6 @@
     "remote_sources_resolved_again_after_interruption": true,
     "output_failure_does_not_mark_download_damaged": true
   },
-  "actual_machine_sleep_wake": "pending user timing/approval; simulated recovery is not hardware verification",
+  "actual_machine_sleep_wake": "deferred at the user's explicit request; remains unverified and is not inferred from simulated recovery",
   "privacy": "Generated silent audio and synthetic metadata only; no account or device identifiers included."
 }
