@@ -10,7 +10,7 @@ Item {
         visible: lyricState.busy || !!lyricState.error || !lyricState.data.available
         BusyIndicator { anchors.horizontalCenter: parent.horizontalCenter; running: lyricState.busy; visible: running }
         Text { width: parent.width; text: lyricState.busy ? "Loading lyrics…" : lyricState.error || "Lyrics aren’t available for this song."; textFormat: Text.PlainText; color: Theme.secondary; wrapMode: Text.Wrap; horizontalAlignment: Text.AlignHCenter; font.pixelSize: 15 }
-        Button { anchors.horizontalCenter: parent.horizontalCenter; visible: !lyricState.busy; text: "Retry"; palette.windowText: "white"; onClicked: lyricState.refresh() }
+        ActionButton { anchors.horizontalCenter: parent.horizontalCenter; visible: !lyricState.busy; text: "Retry"; palette.windowText: "white"; onClicked: lyricState.refresh() }
     }
     ListView {
         id: lines

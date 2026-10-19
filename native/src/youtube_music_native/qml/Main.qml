@@ -33,8 +33,9 @@ ApplicationWindow {
     property bool wideNavigation: appState.sidebarExpanded && width >= 1100
     onClosing: appState.saveWindow(width, height)
     property bool editingText: activeFocusItem instanceof TextInput || activeFocusItem instanceof TextEdit
-    property bool modalOpen: accountDialog.opened || playlistDialogs.opened || shortcutHelp.opened || !!(pages.item && pages.item.objectName === "downloadsPane" && pages.item.blockingShortcuts)
-    property bool playbackShortcuts: !editingText && !modalOpen && !mediaMenu.opened
+    property bool signingOut: false
+    property bool modalOpen: accountMenu.visible || accountDialog.visible || playlistDialogs.opened || shortcutHelp.visible || !!(pages.item && pages.item.objectName === "downloadsPane" && pages.item.blockingShortcuts)
+    property bool playbackShortcuts: !editingText && !modalOpen && !mediaMenu.visible
 
     Rectangle {
         anchors.left: sidebar.right
@@ -49,9 +50,11 @@ ApplicationWindow {
     Rectangle {
         id: sidebar
         objectName: "navigationRail"
-        width: window.wideNavigation ? 240 : 72
+        width: window.wideNavigation ? Math.min(appState.sidebarWidth, window.width - 800) : 72
+        Behavior on width { enabled: !resizeMouse.pressed; NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
         anchors.top: parent.top
         anchors.bottom: player.top
+        clip: true
         color: Theme.background
         Rectangle { anchors.right: parent.right; width: 1; height: parent.height; color: Theme.border }
         IconButton {
@@ -141,18 +144,51 @@ ApplicationWindow {
         }
     }
 
+    FocusScope {
+        id: sidebarResize
+        objectName: "sidebarResizeHandle"
+        x: sidebar.width - 5; width: 10
+        anchors.top: parent.top; anchors.bottom: player.top
+        z: 10
+        enabled: window.width >= 1100
+        activeFocusOnTab: enabled
+        Accessible.role: Accessible.Slider
+        Accessible.name: "Resize sidebar"
+        Accessible.description: "Drag or use Left and Right to resize. Press Enter to collapse or expand."
+        Keys.onLeftPressed: appState.resizeSidebar(sidebar.width <= 200 ? 72 : sidebar.width - 20)
+        Keys.onRightPressed: appState.resizeSidebar(Math.min(sidebar.width < 200 ? 200 : sidebar.width + 20, window.width - 800))
+        Keys.onReturnPressed: appState.toggleSidebar()
+        Rectangle {
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: 3; height: parent.height; radius: 1
+            color: Theme.accent
+            opacity: resizeMouse.containsMouse || resizeMouse.pressed || sidebarResize.activeFocus ? 0.8 : 0
+            Behavior on opacity { NumberAnimation { duration: 120 } }
+        }
+        MouseArea {
+            id: resizeMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.SizeHorCursor
+            onPressed: sidebarResize.forceActiveFocus()
+            onPositionChanged: mouse => { if (pressed) appState.resizeSidebar(Math.min(mapToItem(window.contentItem, mouse.x, mouse.y).x, window.width - 800)) }
+            onDoubleClicked: appState.toggleSidebar()
+        }
+    }
+
     Item {
         id: header
         anchors.left: sidebar.right
         anchors.right: parent.right
         height: 64
-        IconButton { x: 12; y: 10; iconName: "left"; tip: "Back"; onClicked: { appState.setExpanded(false); browseState.back() } }
+        property real gutter: Theme.gutter(width)
+        IconButton { x: header.gutter - 10; y: 10; iconName: "left"; tip: "Back"; onClicked: { appState.setExpanded(false); browseState.back() } }
         TextField {
             id: search
             objectName: "searchField"
-            x: 68
+            x: header.gutter + 44
             y: 11
-            width: Math.min(480, header.width - 200)
+            width: Math.min(480, header.width - header.gutter - 180)
             height: 42
             leftPadding: 52
             rightPadding: text.length > 0 ? 48 : 16
@@ -204,7 +240,7 @@ ApplicationWindow {
             width: 44; height: 44
             iconName: "profile"
             tip: accountState.profile.name || "Account"
-            onClicked: appState.openAccount()
+            onClicked: accountMenu.open()
             contentItem: Item {
                 Avatar {
                     anchors.centerIn: parent
@@ -232,7 +268,7 @@ ApplicationWindow {
             textFormat: Text.PlainText
             color: "white"; font.pixelSize: 14; elide: Text.ElideRight
         }
-        Button { id: reconnectButton; anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; text: "Reconnect"; onClicked: appState.openAccount() }
+        ActionButton { id: reconnectButton; anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; text: "Reconnect"; onClicked: appState.openAccount() }
     }
 
     Item {
@@ -276,26 +312,51 @@ ApplicationWindow {
         Text { id: playbackMessage; anchors.fill: parent; anchors.margins: 12; text: browseState.queueMessage || actionsState.message || libraryState.message || playerState.message || downloadsState.message; textFormat: Text.PlainText; wrapMode: Text.Wrap; color: "white"; font.pixelSize: 14 }
     }
 
-    Dialog {
+    SurfaceMenu {
+        id: accountMenu
+        objectName: "accountMenu"
+        parent: profileButton
+        x: profileButton.width - width
+        y: profileButton.height + 8
+        width: 280
+        MenuAction {
+            height: 84
+            enabled: false
+            contentItem: Row {
+                spacing: 12
+                Avatar { anchors.verticalCenter: parent.verticalCenter; width: 44; height: 44; source: accountState.profile.avatar || "" }
+                Column {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - 56; spacing: 6
+                    Text { width: parent.width; text: accountState.profile.name || "Your account"; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.foreground; font.bold: true; font.pixelSize: 17 }
+                    Text { text: accountState.reconnect ? "Reconnect needed" : accountState.connected ? "Connected" : "Not connected"; color: Theme.secondary; font.pixelSize: 12 }
+                }
+            }
+        }
+        MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Theme.border } }
+        MenuAction { text: accountState.connected ? "Manage connection" : "Connect YouTube Music"; onTriggered: accountDialog.open() }
+        MenuAction { text: "Keyboard shortcuts"; onTriggered: shortcutHelp.open() }
+        MenuAction { text: "Sign out"; visible: accountState.connected; height: visible ? implicitHeight : 0; enabled: !accountState.busy; onTriggered: { window.signingOut = true; accountState.signOut() } }
+    }
+
+    SurfaceDialog {
         id: accountDialog
         anchors.centerIn: parent
         width: Math.min(window.width - 80, 480)
         modal: true
-        title: "Connect YouTube Music"
+        title: accountState.connected ? "Account connection" : "Connect YouTube Music"
         standardButtons: Dialog.Close
         palette.window: Theme.surface
         palette.windowText: "white"
         palette.text: "white"
         contentItem: ColumnLayout {
             spacing: 16
-            Label { Layout.fillWidth: true; text: accountState.profile.name || "Connect your account"; textFormat: Text.PlainText; font.pixelSize: 20; font.bold: true; color: "white"; wrapMode: Text.Wrap }
-            Label { Layout.fillWidth: true; text: "Use the signed-in desktop app or choose a browser session export. Your session stays in this device’s secure storage."; wrapMode: Text.Wrap; color: Theme.secondary }
-            Button { Layout.fillWidth: true; text: "Use existing desktop app session"; visible: accountState.tauriAvailable && !accountState.fixtureMode; enabled: !accountState.busy; onClicked: accountState.importTauri() }
-            Button { Layout.fillWidth: true; text: "Choose browser session file"; enabled: !accountState.busy && !accountState.fixtureMode; onClicked: sessionPicker.open() }
-            Button { Layout.fillWidth: true; text: "Export instructions"; flat: true; onClicked: Qt.openUrlExternally("https://ytmusicapi.readthedocs.io/en/stable/setup/browser.html") }
+            Label { Layout.fillWidth: true; text: "Connect with your desktop session or a browser export. Credentials stay in this device’s secure storage."; wrapMode: Text.Wrap; color: Theme.secondary }
+            ActionButton { Layout.fillWidth: true; primary: true; text: "Use desktop session"; visible: accountState.tauriAvailable && !accountState.fixtureMode; enabled: !accountState.busy; onClicked: accountState.importTauri() }
+            ActionButton { Layout.fillWidth: true; text: "Import browser session"; enabled: !accountState.busy && !accountState.fixtureMode; onClicked: sessionPicker.open() }
+            ActionButton { Layout.fillWidth: true; text: "Export instructions"; flat: true; onClicked: Qt.openUrlExternally("https://ytmusicapi.readthedocs.io/en/stable/setup/browser.html") }
             BusyIndicator { Layout.alignment: Qt.AlignHCenter; running: accountState.busy; visible: running }
             Label { Layout.fillWidth: true; text: accountState.message; textFormat: Text.PlainText; visible: text.length > 0; wrapMode: Text.Wrap; color: Theme.secondary }
-            Button { Layout.fillWidth: true; text: "Sign out"; visible: accountState.connected; enabled: !accountState.busy; onClicked: accountState.signOut() }
         }
     }
     FileDialog {
@@ -305,11 +366,12 @@ ApplicationWindow {
         onAccepted: accountState.importFile(selectedFile)
     }
     Connections { target: appState; function onAccountDialogRequested() { accountDialog.open() } }
+    Connections { target: accountState; function onChanged() { if (window.signingOut && !accountState.busy) { window.signingOut = false; if (accountState.message) accountDialog.open() } } }
     Connections { target: appState; function onPageChanged() { if (appState.page === "Search") search.text = appState.query } }
     MediaMenu { id: mediaMenu }
     PlaylistDialogs { id: playlistDialogs; anchors.fill: parent }
     Connections { target: appState; function onMenuRequested(media, context) { mediaMenu.media = media; mediaMenu.context = context; mediaMenu.popup() } }
-    Dialog {
+    SurfaceDialog {
         id: shortcutHelp
         width: Math.min(580, window.width - 80)
         anchors.centerIn: parent; modal: true; title: "Keyboard shortcuts"; standardButtons: Dialog.Close

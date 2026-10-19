@@ -24,13 +24,13 @@ Item {
                 Text { text: root.artist.monthlyListeners ? root.artist.monthlyListeners + " monthly audience" : ""; textFormat: Text.PlainText; color: Theme.secondary; font.pixelSize: 14; height: 17 }
                 Item { width: 1; height: 16 }
                 Text { width: Math.min(parent.width, 700); text: root.artist.subtitle || ""; textFormat: Text.PlainText; wrapMode: Text.Wrap; maximumLineCount: root.descriptionExpanded ? 1000 : 2; elide: Text.ElideRight; color: "white"; font.pixelSize: 14; lineHeight: 1.25 }
-                Button { text: root.descriptionExpanded ? "LESS" : "MORE"; flat: true; palette.windowText: Theme.foreground; height: 24; leftPadding: 0; visible: !!root.artist.subtitle; onClicked: root.descriptionExpanded = !root.descriptionExpanded }
+                ActionButton { text: root.descriptionExpanded ? "LESS" : "MORE"; flat: true; palette.windowText: Theme.foreground; height: 24; leftPadding: 0; visible: !!root.artist.subtitle; onClicked: root.descriptionExpanded = !root.descriptionExpanded }
                 Item { width: 1; height: 20 }
                 Row {
                     spacing: 8
-                    Button { id: shuffle; objectName: "artistShuffle"; text: "Shuffle"; height: 36; width: 136; enabled: !!root.artist.shuffleId; palette.buttonText: Theme.onAccent; background: Rectangle { radius: 18; color: shuffle.hovered ? Theme.accentHover : Theme.accent; border.width: shuffle.visualFocus ? 2 : 0; border.color: Theme.foreground } onClicked: browseState.startRadio(root.artist.shuffleId, true) }
-                    Button { id: mix; objectName: "artistMix"; text: "Mix"; height: 36; width: 136; enabled: !!root.artist.radioId; palette.buttonText: Theme.onAccent; background: Rectangle { radius: 18; color: mix.hovered ? Theme.accentHover : Theme.accent; border.width: mix.visualFocus ? 2 : 0; border.color: Theme.foreground } onClicked: browseState.startRadio(root.artist.radioId, false) }
-                    Button {
+                    ActionButton { id: shuffle; objectName: "artistShuffle"; text: "Shuffle"; height: 36; width: 136; enabled: !!root.artist.shuffleId; palette.buttonText: Theme.onAccent; background: Rectangle { radius: 18; color: shuffle.hovered ? Theme.accentHover : Theme.accent; border.width: shuffle.visualFocus ? 2 : 0; border.color: Theme.foreground } onClicked: browseState.startRadio(root.artist.shuffleId, true) }
+                    ActionButton { id: mix; objectName: "artistMix"; text: "Mix"; height: 36; width: 136; enabled: !!root.artist.radioId; palette.buttonText: Theme.onAccent; background: Rectangle { radius: 18; color: mix.hovered ? Theme.accentHover : Theme.accent; border.width: mix.visualFocus ? 2 : 0; border.color: Theme.foreground } onClicked: browseState.startRadio(root.artist.radioId, false) }
+                    ActionButton {
                         id: subscription
                         objectName: "artistSubscribe"
                         text: (root.artist.subscribed ? "Subscribed" : "Subscribe") + (root.artist.subscribers ? " " + root.artist.subscribers : "")
@@ -57,19 +57,18 @@ Item {
                     width: parent.width
                     Text { text: "Top songs"; color: "white"; font.family: Theme.headingFont; font.pixelSize: 24; font.bold: true; height: 45 }
                     Repeater { model: parent.section.items; delegate: ArtistSongRow { required property var modelData; width: sections.width; media: modelData; onActivated: item => browseState.play(item) } }
-                    Button { text: "More"; flat: true; palette.windowText: Theme.foreground; onClicked: browseState.openSection(parent.section) }
+                    ActionButton { text: "More"; flat: true; palette.windowText: Theme.foreground; onClicked: browseState.openSection(parent.section) }
                 }
             }
             Component { id: cardSection; Shelf { width: sections.width; section: parent.section; onActivated: item => browseState.open(item); onPlayRequested: item => browseState.play(item); onMoreRequested: browseState.openSection(section); onPlayAllRequested: browseState.playItems(section.items) } }
         }
         onContentYChanged: if (moving) catalogState.saveScroll(contentY)
     }
-    IconButton { x: 8; y: 12; iconName: "left"; tip: "Back"; onClicked: browseState.back() }
-    BusyIndicator { anchors.centerIn: parent; running: catalogState.busy; visible: running }
+    BusyIndicator { anchors.centerIn: parent; running: catalogState.busy; visible: running && !(root.artist.shelves || []).length }
     RetryBanner { message: catalogState.error; busy: catalogState.busy; onRetry: catalogState.refresh() }
     property int revision: -1
     function restoreScroll() {
-        if (catalogState.busy || revision === catalogState.revision) return
+        if (!catalogState.hasData || revision === catalogState.revision) return
         revision = catalogState.revision
         Qt.callLater(function() { if (catalogState.hasScrollPosition) sections.contentY = catalogState.scrollPosition; else sections.positionViewAtBeginning() })
     }

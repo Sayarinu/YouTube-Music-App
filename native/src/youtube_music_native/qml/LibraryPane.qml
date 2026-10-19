@@ -14,8 +14,8 @@ Item {
         Item {
             Row {
                 width: parent.width; height: 52; spacing: 24; visible: !root.history
-                Button { id: libraryTab; text: "LIBRARY"; flat: true; height: 52; palette.windowText: "white"; onClicked: libraryState.select("Playlists"); Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 2; color: Theme.accent } }
-                Button { text: "DOWNLOADS"; flat: true; height: 52; palette.windowText: Theme.secondary; onClicked: appState.navigate("Downloads") }
+                ActionButton { id: libraryTab; text: "LIBRARY"; flat: true; height: 52; palette.windowText: "white"; onClicked: libraryState.select("Playlists"); Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 2; color: Theme.accent } }
+                ActionButton { text: "DOWNLOADS"; flat: true; height: 52; palette.windowText: Theme.secondary; onClicked: appState.navigate("Downloads") }
             }
             Rectangle { y: 52; height: 1; width: parent.width; color: Theme.border; visible: !root.history }
             Row { spacing: 16; visible: root.history; height: 72; IconButton { iconName: "left"; tip: "Back to library"; onClicked: libraryState.select("Playlists") } Text { text: "History"; color: "white"; font.family: Theme.headingFont; font.bold: true; font.pixelSize: 30 } }
@@ -24,7 +24,7 @@ Item {
                 y: 84; width: parent.width - (sortOrder.visible ? 180 : 0); height: 36
                 visible: !root.history; orientation: ListView.Horizontal; spacing: 12; clip: true
                 model: libraryState.sections
-                delegate: Button {
+                delegate: ActionButton {
                     id: filter
                     required property string modelData
                     text: modelData; height: 36; leftPadding: 14; rightPadding: 14
@@ -60,7 +60,7 @@ Item {
         }
         onContentYChanged: if (moving) catalogState.saveScroll(contentY)
         onAtYEndChanged: if (atYEnd && root.result.cursor !== undefined && root.result.cursor !== null && !catalogState.busy) catalogState.more()
-        footer: Button { text: "Load more"; visible: root.result.cursor !== undefined && root.result.cursor !== null; enabled: !catalogState.busy; onClicked: catalogState.more() }
+        footer: ActionButton { text: "Load more"; visible: root.result.cursor !== undefined && root.result.cursor !== null; enabled: !catalogState.busy; onClicked: catalogState.more() }
     }
     ListView {
         id: songs
@@ -76,19 +76,19 @@ Item {
         }
         onContentYChanged: if (moving) catalogState.saveScroll(contentY)
         onAtYEndChanged: if (atYEnd && root.result.cursor !== undefined && root.result.cursor !== null && !catalogState.busy) catalogState.more()
-        footer: Button { text: "Load more"; visible: root.result.cursor !== undefined && root.result.cursor !== null; enabled: !catalogState.busy; onClicked: catalogState.more() }
+        footer: ActionButton { text: "Load more"; visible: root.result.cursor !== undefined && root.result.cursor !== null; enabled: !catalogState.busy; onClicked: catalogState.more() }
     }
     Column {
         anchors.centerIn: parent; width: parent.width - 80; spacing: 20
         visible: !catalogState.busy && !(root.result.items || []).length
         Text { width: parent.width; text: catalogState.error || (!accountState.connected && !appState.fixtureMode ? "Connect YouTube Music to browse your library." : root.history ? "No listening history yet." : "Your " + libraryState.selectedSection.toLowerCase() + " will appear here."); textFormat: Text.PlainText; color: Theme.secondary; font.pixelSize: 16; wrapMode: Text.Wrap; horizontalAlignment: Text.AlignHCenter }
-        Button { anchors.horizontalCenter: parent.horizontalCenter; text: "Retry"; visible: !!catalogState.error; onClicked: catalogState.refresh() }
-        Button { anchors.horizontalCenter: parent.horizontalCenter; text: "Connect YouTube Music"; visible: !accountState.connected && !appState.fixtureMode; onClicked: appState.openAccount() }
+        ActionButton { anchors.horizontalCenter: parent.horizontalCenter; text: "Retry"; visible: !!catalogState.error; onClicked: catalogState.refresh() }
+        ActionButton { anchors.horizontalCenter: parent.horizontalCenter; text: "Connect YouTube Music"; visible: !accountState.connected && !appState.fixtureMode; onClicked: appState.openAccount() }
     }
-    BusyIndicator { anchors.centerIn: parent; running: catalogState.busy; visible: running }
+    BusyIndicator { anchors.centerIn: parent; running: catalogState.busy; visible: running && !(root.result.items || []).length }
     property int revision: -1
     function restoreScroll() {
-        if (catalogState.busy || revision === catalogState.revision) return
+        if (!catalogState.hasData || revision === catalogState.revision) return
         revision = catalogState.revision
         Qt.callLater(function() { var view = root.rows ? songs : grid; if (catalogState.hasScrollPosition) view.contentY = catalogState.scrollPosition; else view.positionViewAtBeginning() })
     }

@@ -21,6 +21,7 @@ class ShellController(QObject):
         self._page = "Home"
         self._query = ""
         self._sidebar = self.settings.value("sidebarExpanded", False, type=bool)
+        self._sidebar_width = max(200, min(360, self._integer_setting("sidebarWidth", 240)))
         self._volume = max(0, min(100, self._integer_setting("volume", 70)))
         self._unmuted_volume = max(1, min(100, self._integer_setting("lastVolume", self._volume or 70)))
         self._fixture = fixture or {}
@@ -45,6 +46,17 @@ class ShellController(QObject):
     @Property(bool, notify=sidebarChanged)
     def sidebarExpanded(self):
         return self._sidebar
+
+    @Property(int, notify=sidebarChanged)
+    def sidebarWidth(self):
+        return self._sidebar_width
+
+    @Slot(int)
+    def resizeSidebar(self, width):
+        self._sidebar = width >= 150
+        if self._sidebar:
+            self._sidebar_width = max(200, min(360, width))
+        self.sidebarChanged.emit()
 
     @Property("QVariantList", constant=True)
     def shelves(self):
@@ -150,6 +162,7 @@ class ShellController(QObject):
         self.settings.setValue("width", max(920, min(7680, width)))
         self.settings.setValue("height", max(620, min(4320, height)))
         self.settings.setValue("sidebarExpanded", self._sidebar)
+        self.settings.setValue("sidebarWidth", self._sidebar_width)
         self.settings.setValue("volume", self._volume)
         self.settings.setValue("lastVolume", self._unmuted_volume)
         self.settings.sync()

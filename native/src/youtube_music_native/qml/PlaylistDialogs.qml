@@ -5,10 +5,10 @@ import "Theme.js" as Theme
 
 Item {
     id: root
-    property bool opened: editor.opened || removal.opened || chooser.opened
+    property bool opened: editor.visible || removal.visible || chooser.visible
     property string operation: "playlist_create"
     property var target: ({})
-    Dialog {
+    SurfaceDialog {
         id: editor
         objectName: "playlistEditor"
         anchors.centerIn: parent; width: Math.min(root.width - 80, 440); modal: true
@@ -21,13 +21,13 @@ Item {
             Label { Layout.fillWidth: true; text: actionsState.message; textFormat: Text.PlainText; visible: !!text; wrapMode: Text.Wrap; color: Theme.secondary }
         }
         footer: DialogButtonBox {
-            Button { text: "Cancel"; enabled: !actionsState.busy; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
-            Button { id: save; text: "Save"; enabled: !!name.text.trim() && !actionsState.busy && (accountState.connected || appState.fixtureMode); DialogButtonBox.buttonRole: DialogButtonBox.ActionRole; onClicked: if (root.operation === "playlist_create") libraryState.create(name.text); else libraryState.rename(root.target.id, name.text) }
+            ActionButton { text: "Cancel"; enabled: !actionsState.busy; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
+            ActionButton { id: save; text: "Save"; enabled: !!name.text.trim() && !actionsState.busy && (accountState.connected || appState.fixtureMode); DialogButtonBox.buttonRole: DialogButtonBox.ActionRole; onClicked: if (root.operation === "playlist_create") libraryState.create(name.text); else libraryState.rename(root.target.id, name.text) }
             onRejected: editor.close()
         }
         onOpened: { name.forceActiveFocus(); name.selectAll() }
     }
-    Dialog {
+    SurfaceDialog {
         id: removal
         anchors.centerIn: parent; width: Math.min(root.width - 80, 440); modal: true
         title: "Delete playlist"
@@ -38,12 +38,12 @@ Item {
             Label { Layout.fillWidth: true; text: actionsState.message; textFormat: Text.PlainText; visible: !!text; wrapMode: Text.Wrap; color: Theme.secondary }
         }
         footer: DialogButtonBox {
-            Button { text: "Cancel"; enabled: !actionsState.busy; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
-            Button { text: "Delete"; enabled: !actionsState.busy && (accountState.connected || appState.fixtureMode); DialogButtonBox.buttonRole: DialogButtonBox.ActionRole; onClicked: libraryState.removePlaylist(root.target.id) }
+            ActionButton { text: "Cancel"; enabled: !actionsState.busy; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
+            ActionButton { text: "Delete"; enabled: !actionsState.busy && (accountState.connected || appState.fixtureMode); DialogButtonBox.buttonRole: DialogButtonBox.ActionRole; onClicked: libraryState.removePlaylist(root.target.id) }
             onRejected: removal.close()
         }
     }
-    Dialog {
+    SurfaceDialog {
         id: chooser
         anchors.centerIn: parent; width: Math.min(root.width - 80, 440); modal: true
         title: "Add to playlist"; standardButtons: Dialog.Cancel
@@ -64,7 +64,7 @@ Item {
             }
             BusyIndicator { Layout.alignment: Qt.AlignHCenter; running: libraryState.loadingPlaylists; visible: running }
             Label { Layout.fillWidth: true; text: actionsState.message || libraryState.message || (!libraryState.loadingPlaylists && !libraryState.playlists.length ? "Create a playlist with New playlist, then add this song." : ""); textFormat: Text.PlainText; visible: !!text; wrapMode: Text.Wrap; color: Theme.secondary }
-            Button { text: "Retry"; visible: !!libraryState.message; onClicked: libraryState.choosePlaylist(root.target) }
+            ActionButton { text: "Retry"; visible: !!libraryState.message; onClicked: libraryState.choosePlaylist(root.target) }
         }
     }
     Connections {

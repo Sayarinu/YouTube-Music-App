@@ -106,7 +106,7 @@ class Catalog:
         for change in self.changes:
             apply_change(data, change["result"], params.get("id") if route == "playlist" else None)
 
-    def fetch(self, route, params=None, offset=0, refresh=False, page_size=None):
+    def fetch(self, route, params=None, offset=0, refresh=False, page_size=None, preview=None):
         params = params or {}
         if not isinstance(params, dict) or not isinstance(offset, int) or not 0 <= offset <= 100000:
             raise CatalogError("This catalog page is invalid. Open it again.")
@@ -128,6 +128,9 @@ class Catalog:
         if cached and fresh and complete and not refresh:
             data = cached["data"]
         else:
+            if cached and preview and not refresh and offset == 0:
+                self._apply_changes(cached["data"], route, params)
+                preview(self._page(cached["data"], route, list_key, offset, target, not fresh, ""))
             try:
                 data = self._fetch(self.auth.catalog(), route, params, target + 1)
             except Exception as error:
@@ -143,6 +146,10 @@ class Catalog:
                 except sqlite3.Error:
                     warning = "cache_unavailable"
         self._apply_changes(data, route, params)
+        return self._page(data, route, list_key, offset, target, stale, warning)
+
+    @staticmethod
+    def _page(data, route, list_key, offset, target, stale, warning):
         page = dict(data)
         all_items = data.get(list_key, [])
         page[list_key] = all_items[offset:target]

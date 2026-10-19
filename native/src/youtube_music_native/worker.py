@@ -101,7 +101,8 @@ def handle(service, request, resources=None, progress=None):
         resources["playlist_changes"] = changes
         store = MetadataStore(payload["cache_path"])
         try:
-            return Catalog(service, store, changes).fetch(payload["route"], payload.get("params"), payload.get("offset", 0), bool(payload.get("refresh")), payload.get("page_size"))
+            preview = (lambda page: progress({"cached_page": page})) if progress and payload.get("preview_cached") else None
+            return Catalog(service, store, changes).fetch(payload["route"], payload.get("params"), payload.get("offset", 0), bool(payload.get("refresh")), payload.get("page_size"), preview)
         finally:
             store.close()
     if operation == "resolve":

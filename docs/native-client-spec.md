@@ -6,7 +6,9 @@ Project: [YouTube Music Native Client](https://linear.app/nouvelle-lune-atelier/
 
 ## Required experience
 
-The post-release visual baseline is the user-approved purple redesign (LUNE-355): charcoal background (#14131B), raised surfaces (#22212B), lavender accents (#A78BFA), bundled Roboto typography, padded artwork cards and full-width browsing. A compact 72 pixel navigation rail expands to 240 pixels when the window is at least 1100 pixels wide; the remembered preference returns when the window grows. The floating bottom player is 92 pixels tall and inset 12 pixels, with content reserved above it. Preserve a 920 by 620 minimum, responsive content, visible keyboard focus and accessible controls.
+The post-release visual baseline is the user-approved purple redesign (LUNE-355): charcoal background (#14131B), raised surfaces (#22212B), lavender accents (#A78BFA), bundled Roboto typography, padded artwork cards and full-width browsing. A compact 72 pixel navigation rail expands when the window is at least 1100 pixels wide; its edge can be dragged between 200 and 360 pixels, reserving at least 800 pixels for content. Remember the expanded width and collapse preference across restarts and narrow windows. The floating bottom player is 92 pixels tall and inset 12 pixels, with content reserved above it. Preserve a 920 by 620 minimum, responsive content, visible keyboard focus and accessible controls.
+
+LUNE-358 refines action buttons into rounded outlines, aligns page headings with the single top Back control, and separates the compact profile menu from connection import. Home mood/category chips retain their appearance. Use short interaction transitions and block playback shortcuts for the full lifetime of open popups. Retain bounded recent page snapshots for immediate revisits; show saved disk content during remote refreshes. Preserve explicit refresh, account isolation, mutation invalidation and pagination, keeping disk and network work off the GUI thread.
 
 Playlist and album pages use a wide artwork header with cover, title, description and available metadata, followed by collection actions and a virtualized track table. Artwork blurs only within the bounded header and fades into solid charcoal. Software rendering uses a gradient fallback. Artist banners and shelves follow the same theme. Queue and lyrics remain in the expanded player; browsing has no persistent right panel.
 
@@ -124,6 +126,7 @@ Actual assigned issue identifiers and titles are listed below. Branches use the 
 | [LUNE-355](https://linear.app/nouvelle-lune-atelier/issue/LUNE-355) | Redesign the native client with purple accents and artwork-led collection pages |
 | [LUNE-356](https://linear.app/nouvelle-lune-atelier/issue/LUNE-356) | Add a priority manual queue ahead of the playback source |
 | [LUNE-357](https://linear.app/nouvelle-lune-atelier/issue/LUNE-357) | Polish native icons and circular profile and artist artwork |
+| [LUNE-358](https://linear.app/nouvelle-lune-atelier/issue/LUNE-358) | Refine native navigation, account menu and cached page loading |
 | [LUNE-351](https://linear.app/nouvelle-lune-atelier/issue/LUNE-351/port-and-package-the-native-client-for-windows) | Port and package the native client for Windows |
 | [LUNE-352](https://linear.app/nouvelle-lune-atelier/issue/LUNE-352/port-and-package-the-native-client-for-macos) | Port and package the native client for macOS |
 

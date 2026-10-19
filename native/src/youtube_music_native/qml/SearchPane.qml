@@ -17,7 +17,7 @@ Item {
                 spacing: 12
                 Repeater {
                     model: searchState.filters
-                    delegate: Button {
+                    delegate: ActionButton {
                         id: filter
                         required property string modelData
                         text: modelData; height: 36
@@ -36,18 +36,18 @@ Item {
         }
         onContentYChanged: if (moving) catalogState.saveScroll(contentY)
         onAtYEndChanged: if (atYEnd && root.result.cursor !== undefined && root.result.cursor !== null && !catalogState.busy) catalogState.more()
-        footer: Button { text: "Load more"; visible: root.result.cursor !== undefined && root.result.cursor !== null; enabled: !catalogState.busy; onClicked: catalogState.more() }
+        footer: ActionButton { text: "Load more"; visible: root.result.cursor !== undefined && root.result.cursor !== null; enabled: !catalogState.busy; onClicked: catalogState.more() }
     }
     Column {
         anchors.centerIn: parent; width: parent.width - 80; spacing: 20
         visible: !catalogState.busy && !(root.result.items || []).length
         Text { width: parent.width; text: catalogState.error || "No results. Try another song, artist, album or playlist."; textFormat: Text.PlainText; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.Wrap; color: Theme.secondary; font.pixelSize: 16 }
-        Button { anchors.horizontalCenter: parent.horizontalCenter; text: "Retry"; visible: !!catalogState.error; onClicked: catalogState.refresh() }
+        ActionButton { anchors.horizontalCenter: parent.horizontalCenter; text: "Retry"; visible: !!catalogState.error; onClicked: catalogState.refresh() }
     }
-    BusyIndicator { anchors.centerIn: parent; running: catalogState.busy; visible: running }
+    BusyIndicator { anchors.centerIn: parent; running: catalogState.busy; visible: running && !(root.result.items || []).length }
     property int revision: -1
     function restoreScroll() {
-        if (catalogState.busy || revision === catalogState.revision) return
+        if (!catalogState.hasData || revision === catalogState.revision) return
         revision = catalogState.revision
         Qt.callLater(function() { if (catalogState.hasScrollPosition) results.contentY = catalogState.scrollPosition; else results.positionViewAtBeginning() })
     }

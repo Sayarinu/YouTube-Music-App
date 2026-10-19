@@ -112,6 +112,7 @@ class Browse(QObject):
     def _account_changed(self):
         identity = (self.account.profile.get("name"), self.account.profile.get("handle"))
         if not self.account.profile:
+            self._history = []
             self._identity = None
             self._cancel_play_pages()
             self._cancel_mood()
@@ -123,6 +124,7 @@ class Browse(QObject):
             self.shell.setPlaylists([])
             return
         if self.account.connected and identity != self._identity:
+            self._history = []
             self._identity = identity
             self.navigate(self.shell.page)
             self.refreshPlaylists()

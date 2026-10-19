@@ -21,5 +21,5 @@ IconButton {
         else downloadsState.download(media)
     }
     Rectangle { anchors.bottom: parent.bottom; height: 2; width: parent.width * (root.entry.progress || 0); color: Theme.accent; visible: root.entry.state === "downloading" }
-    Menu { id: removal; MenuItem { text: "Remove download"; onTriggered: downloadsState.remove(root.entry.key) } }
+    SurfaceMenu { id: removal; MenuAction { text: "Remove download"; onTriggered: downloadsState.remove(root.entry.key) } }
 }

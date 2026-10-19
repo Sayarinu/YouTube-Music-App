@@ -43,15 +43,15 @@ Item {
                     Text { text: root.playlist ? root.album.privacy === "PRIVATE" ? "PRIVATE PLAYLIST" : "PLAYLIST" : "ALBUM"; color: Theme.accent; font.pixelSize: 12; font.bold: true; font.letterSpacing: 1 }
                     Text { width: parent.width; text: root.album.title || (root.playlist ? "Playlist" : "Album"); textFormat: Text.PlainText; wrapMode: Text.Wrap; maximumLineCount: 3; elide: Text.ElideRight; color: Theme.foreground; font.pixelSize: root.compact ? 32 : 48; font.bold: true }
                     Text { id: description; objectName: "collectionDescription"; width: parent.width; visible: !!root.album.subtitle; text: root.album.subtitle || ""; textFormat: Text.PlainText; wrapMode: Text.Wrap; maximumLineCount: root.descriptionExpanded ? 1000 : 2; elide: Text.ElideRight; color: Theme.secondary; font.pixelSize: 14 }
-                    Button { objectName: "descriptionToggle"; visible: description.truncated || root.descriptionExpanded; text: root.descriptionExpanded ? "Less" : "More"; flat: true; height: 28; leftPadding: 0; onClicked: root.descriptionExpanded = !root.descriptionExpanded }
+                    ActionButton { objectName: "descriptionToggle"; visible: description.truncated || root.descriptionExpanded; text: root.descriptionExpanded ? "Less" : "More"; flat: true; height: 28; leftPadding: 0; onClicked: root.descriptionExpanded = !root.descriptionExpanded }
                     Text { width: parent.width; visible: root.playlist; text: root.album.author || "YouTube Music"; textFormat: Text.PlainText; color: Theme.foreground; elide: Text.ElideRight; font.pixelSize: 14; font.bold: true }
-                    Button { id: artist; width: parent.width; visible: !root.playlist; text: root.album.artists && root.album.artists.length ? root.album.artists[0].name : "Artist"; flat: true; height: 28; leftPadding: 0; contentItem: Text { text: artist.text; textFormat: Text.PlainText; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter; color: Theme.foreground; font.pixelSize: 14; font.bold: true } enabled: !!(root.album.artists && root.album.artists.length && root.album.artists[0].id); onClicked: browseState.open({kind: "artist", id: root.album.artists[0].id, title: text}) }
+                    ActionButton { id: artist; width: parent.width; visible: !root.playlist; text: root.album.artists && root.album.artists.length ? root.album.artists[0].name : "Artist"; flat: true; height: 28; leftPadding: 0; contentItem: Text { text: artist.text; textFormat: Text.PlainText; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter; color: Theme.foreground; font.pixelSize: 14; font.bold: true } enabled: !!(root.album.artists && root.album.artists.length && root.album.artists[0].id); onClicked: browseState.open({kind: "artist", id: root.album.artists[0].id, title: text}) }
                     Text { width: parent.width; text: (root.album.year ? root.album.year + " · " : "") + (root.album.trackCount || (root.album.items || []).length) + " songs" + (root.album.duration ? " · " + root.durationLabel : ""); color: Theme.secondary; font.pixelSize: 13; wrapMode: Text.Wrap }
                 }
             }
             Row {
                 x: root.margin; spacing: 12; height: 80
-                Button { id: play; anchors.verticalCenter: parent.verticalCenter; width: 56; height: 56; padding: 14; enabled: (root.album.items || []).length > 0; Accessible.name: root.playlist ? "Play playlist" : "Play album"; background: Rectangle { radius: 16; color: play.hovered ? Theme.accentHover : Theme.accent; border.width: play.visualFocus ? 2 : 0; border.color: Theme.foreground } contentItem: Symbol { name: "play"; color: Theme.onAccent } onClicked: browseState.playView() }
+                Button { id: play; anchors.verticalCenter: parent.verticalCenter; width: 56; height: 56; padding: 14; enabled: (root.album.items || []).length > 0; Accessible.name: root.playlist ? "Play playlist" : "Play album"; background: Rectangle { radius: 28; color: play.hovered ? Theme.accentHover : Theme.accent; border.width: play.visualFocus ? 2 : 0; border.color: Theme.foreground } contentItem: Symbol { name: "play"; color: Theme.onAccent } onClicked: browseState.playView() }
                 DownloadButton { anchors.verticalCenter: parent.verticalCenter; media: ({kind: root.playlist ? "playlist" : "album", id: catalogState.parameters.id || "", title: root.album.title || "", thumbnail: root.album.thumbnail || ""}) }
                 IconButton { anchors.verticalCenter: parent.verticalCenter; visible: !root.playlist || !root.album.editable; iconName: "library"; tip: root.album.saved ? "Remove from library" : "Add to library"; iconColor: root.album.saved ? Theme.accent : Theme.secondary; enabled: !actionsState.busy && (accountState.connected || appState.fixtureMode) && (root.playlist || !!root.album.audioPlaylistId); onClicked: actionsState.set(root.playlist ? "playlist_library" : "album_library", root.playlist ? catalogState.parameters.id : root.album.audioPlaylistId, !root.album.saved, catalogState.parameters.id) }
                 IconButton { anchors.verticalCenter: parent.verticalCenter; visible: root.playlist && !!root.album.editable; iconName: "edit"; tip: "Rename playlist"; enabled: !actionsState.busy && (accountState.connected || appState.fixtureMode); onClicked: libraryState.edit("playlist_rename", {id: catalogState.parameters.id, title: root.album.title}) }
@@ -84,14 +84,14 @@ Item {
         footer: Column {
             width: songs.width
             Text { width: parent.width; padding: 24; text: "Add songs from a song’s menu."; visible: root.playlist && !catalogState.busy && !catalogState.error && !(root.album.items || []).length; wrapMode: Text.Wrap; horizontalAlignment: Text.AlignHCenter; color: Theme.secondary; font.pixelSize: 16 }
-            Button { text: "Load more"; visible: root.album.cursor !== undefined && root.album.cursor !== null; enabled: !catalogState.busy; onClicked: catalogState.more() }
+            ActionButton { text: "Load more"; visible: root.album.cursor !== undefined && root.album.cursor !== null; enabled: !catalogState.busy; onClicked: catalogState.more() }
         }
     }
     BusyIndicator { anchors.centerIn: parent; running: catalogState.busy; visible: running && !(root.album.items || []).length }
     RetryBanner { message: catalogState.error; busy: catalogState.busy; onRetry: catalogState.refresh() }
     property int revision: -1
     function restoreScroll() {
-        if (catalogState.busy || revision === catalogState.revision) return
+        if (!catalogState.hasData || revision === catalogState.revision) return
         revision = catalogState.revision
         Qt.callLater(function() { if (catalogState.hasScrollPosition) songs.contentY = catalogState.scrollPosition; else songs.positionViewAtBeginning() })
     }

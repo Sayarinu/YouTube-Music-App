@@ -32,7 +32,7 @@ Item {
         id: actions
         anchors.right: parent.right; anchors.verticalCenter: heading.verticalCenter; spacing: 16
         anchors.verticalCenterOffset: root.section.subtitle ? 8 : 0
-        Button {
+        ActionButton {
             id: more
             text: root.compact ? "Play all" : "More"
             height: 36; leftPadding: 16; rightPadding: 16

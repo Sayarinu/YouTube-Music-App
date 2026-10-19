@@ -8,7 +8,7 @@ Item {
     property real gutter: Theme.gutter(width)
     property string selectedKind: "All"
     property var selectedEntry: ({})
-    property bool blockingShortcuts: options.opened || removal.opened
+    property bool blockingShortcuts: options.visible || removal.visible
     property var entries: downloadsState.collections.filter(function(entry) { return root.selectedKind === "All" || entry.kind === root.selectedKind.toLowerCase().slice(0, -1) })
     function bytesLabel(value) {
         if (value >= 1073741824) return (value / 1073741824).toFixed(1) + " GB"
@@ -33,15 +33,15 @@ Item {
             width: list.width; height: 204
             Row {
                 width: parent.width; height: 52; spacing: 24
-                Button { text: "LIBRARY"; flat: true; height: 52; palette.windowText: Theme.secondary; onClicked: libraryState.select("Playlists") }
-                Button { text: "DOWNLOADS"; flat: true; height: 52; palette.windowText: "white"; Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 2; color: Theme.accent } }
+                ActionButton { text: "LIBRARY"; flat: true; height: 52; palette.windowText: Theme.secondary; onClicked: libraryState.select("Playlists") }
+                ActionButton { text: "DOWNLOADS"; flat: true; height: 52; palette.windowText: "white"; Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 2; color: Theme.accent } }
             }
             Rectangle { y: 52; height: 1; width: parent.width; color: Theme.border }
             Row {
                 y: 84; height: 36; spacing: 12
                 Repeater {
                     model: ["All", "Songs", "Albums", "Playlists"]
-                    Button {
+                    ActionButton {
                         id: filter
                         required property string modelData
                         text: modelData; height: 36; leftPadding: 14; rightPadding: 14
@@ -92,13 +92,13 @@ Item {
         Text { width: parent.width; text: "Music wherever you go"; color: "white"; font.family: Theme.headingFont; font.bold: true; font.pixelSize: 28; horizontalAlignment: Text.AlignHCenter }
         Text { width: parent.width; text: downloadsState.collections.length ? "No downloaded " + root.selectedKind.toLowerCase() + " yet." : "Download songs, albums and playlists from their menus.\nCompleted music stays available offline."; color: Theme.secondary; wrapMode: Text.Wrap; horizontalAlignment: Text.AlignHCenter; font.pixelSize: 15 }
     }
-    Menu {
+    SurfaceMenu {
         id: options
-        MenuItem { text: "Shuffle play"; enabled: root.selectedEntry.ready > 0; onTriggered: downloadsState.play(root.selectedEntry.key, true) }
-        MenuItem { text: "Refresh download"; enabled: (accountState.connected || appState.fixtureMode) && root.selectedEntry.state !== "queued" && root.selectedEntry.state !== "downloading"; onTriggered: downloadsState.download(root.selectedEntry) }
-        MenuItem { text: "Remove download"; onTriggered: removal.open() }
+        MenuAction { text: "Shuffle play"; enabled: root.selectedEntry.ready > 0; onTriggered: downloadsState.play(root.selectedEntry.key, true) }
+        MenuAction { text: "Refresh download"; enabled: (accountState.connected || appState.fixtureMode) && root.selectedEntry.state !== "queued" && root.selectedEntry.state !== "downloading"; onTriggered: downloadsState.download(root.selectedEntry) }
+        MenuAction { text: "Remove download"; onTriggered: removal.open() }
     }
-    Dialog {
+    SurfaceDialog {
         id: removal
         objectName: "downloadRemovalDialog"
         parent: Overlay.overlay; anchors.centerIn: parent

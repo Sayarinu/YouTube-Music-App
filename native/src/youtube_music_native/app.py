@@ -95,6 +95,8 @@ def main(argv=None):
     controller = ShellController(data / "settings.ini", fixture)
     account = Account(data / "settings.ini", fixture=args.fixture, parent=controller)
     catalog = CatalogView(account.worker, cache / "metadata.sqlite3", account, parent=controller)
+    account.connectedChanged.connect(catalog.accountChanged)
+    account.sessionChanged.connect(catalog.invalidate)
     media_data = data if args.data_dir or args.smoke_test or args.screenshot else Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation))
     media_data.mkdir(parents=True, exist_ok=True, mode=0o700)
     source_worker = None if args.fixture else Worker(controller, idle_ms=15000)

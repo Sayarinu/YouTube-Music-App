@@ -84,7 +84,7 @@ Item {
                             }
                         }
                     }
-                    Button {
+                    ActionButton {
                         objectName: "clearQueuedSongs"
                         anchors.right: parent.right; y: 70; height: 32
                         text: "Clear queued songs"
