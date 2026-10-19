@@ -2,7 +2,7 @@
 
 Shared Python code for the native Qt client. The first development gate is a repeatable real-account compatibility check, tracked by [LUNE-336](https://linear.app/nouvelle-lune-atelier/issue/LUNE-336/prove-premium-account-access-streaming-and-offline-playback).
 
-The client connects accounts, renders personalized Home and Explore, searches music, manages the library/playlists, downloads collections and plays music through libmpv. The window remains a development preview while Linux integration, verification and release tickets are completed.
+The client connects accounts, renders personalized Home and Explore, searches music, manages the library/playlists, downloads collections and plays music through libmpv. The first release targets Arch Linux/KDE. Windows and macOS packaging is tracked by LUNE-351 and LUNE-352.
 
 ## Development
 
