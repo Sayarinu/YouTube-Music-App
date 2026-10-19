@@ -102,7 +102,7 @@ Item {
                         section.delegate: Text {
                             required property string section
                             width: queue.width; height: 40; topPadding: 14
-                            text: section; color: Theme.accent; font.pixelSize: 14; font.bold: true
+                            text: section; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.accent; font.pixelSize: 14; font.bold: true
                         }
                         property string focusKey: ""
                         property string restoreKey: ""

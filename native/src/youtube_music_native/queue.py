@@ -13,6 +13,8 @@ class Queue:
     def __init__(self):
         self.source, self.manual, self.history = [], [], []
         self.current = None
+        self.source_label = ""
+        self._history_sources = []
         self.source_index = -1
         self.repeat = "off"
         self.shuffled = False
@@ -30,11 +32,12 @@ class Queue:
     def all_entries(self):
         return list({entry["key"]: entry for entry in self.source + self.manual + self.history + ([self.current] if self.current else [])}.values())
 
-    def replace(self, tracks, index=0):
+    def replace(self, tracks, index=0, source_label=""):
+        self.source_label = source_label.strip()
         self.source = new_entries(tracks)
         self.source_index = max(0, min(int(index), len(self.source) - 1)) if self.source else -1
         self.current = self.source[self.source_index] if self.source else None
-        self.history = []
+        self.history, self._history_sources = [], []
         self._original = [entry["key"] for entry in self.source]
         if self.shuffled:
             self._shuffle_remaining()
@@ -58,7 +61,9 @@ class Queue:
     def _remember(self):
         if self.current:
             self.history.append(self.current)
+            self._history_sources.append(self.source[self.source_index]["key"] if self.source_index >= 0 else None)
             self.history = self.history[-1000:]
+            self._history_sources = self._history_sources[-1000:]
 
     def select(self, index):
         if not 0 <= index < len(self.entries):
@@ -104,6 +109,8 @@ class Queue:
             return None
         # Replaying history does not put consumed manual entries back in the queue.
         self.current = self.history.pop()
+        anchor = self._history_sources.pop()
+        self.source_index = next((index for index, entry in enumerate(self.source) if entry["key"] == anchor), -1)
         return self.current
 
     def clear_manual(self):
@@ -118,11 +125,15 @@ class Queue:
             self.manual.remove(entry)
         if entry in self.source:
             location = self.source.index(entry)
+            preceding = self.source[location - 1]["key"] if location else None
+            self._history_sources = [preceding if key == entry["key"] else key for key in self._history_sources]
             self.source.pop(location)
             self._original.remove(entry["key"])
             if location <= self.source_index:
                 self.source_index -= 1
-        self.history = [prior for prior in self.history if prior["key"] != entry["key"]]
+        history = [(prior, anchor) for prior, anchor in zip(self.history, self._history_sources) if prior["key"] != entry["key"]]
+        self.history = [prior for prior, anchor in history]
+        self._history_sources = [anchor for prior, anchor in history]
         if was_current:
             self.current = None
             self.advance()
@@ -156,7 +167,7 @@ class Queue:
         random.shuffle(self.source)
         self.source_index = 0 if self.source else -1
         self.current = self.source[0] if self.source else None
-        self.history = []
+        self.history, self._history_sources = [], []
 
     def toggle_shuffle(self):
         self.shuffled = not self.shuffled
@@ -171,7 +182,7 @@ class Queue:
 
     def snapshot(self, position=0):
         return {"version": 2, "entries": self.all_entries, "source": [entry["key"] for entry in self.source],
-                "source_index": self.source_index, "manual": [entry["key"] for entry in self.manual],
+                "source_index": self.source_index, "source_label": self.source_label, "history_sources": self._history_sources, "manual": [entry["key"] for entry in self.manual],
                 "history": [entry["key"] for entry in self.history], "current": self.current["key"] if self.current else None,
                 "position": position, "repeat": self.repeat, "shuffled": self.shuffled, "original": self._original}
 
@@ -192,6 +203,7 @@ class Queue:
                 source, manual, history = entries, [], []
                 index = max(-1, min(int(value.get("index", -1)), len(entries) - 1))
                 current = entries[index] if index >= 0 else None
+                label, history_sources = "", []
             else:
                 def group(name, duplicates=False):
                     keys = value[name]
@@ -201,6 +213,13 @@ class Queue:
                         raise ValueError("Duplicate queue references")
                     return [pool[key] for key in keys]
                 source, manual, history = group("source"), group("manual"), group("history", duplicates=True)
+                label = value.get("source_label", "")
+                history_sources = value.get("history_sources", [])
+                if not isinstance(label, str) or len(label) > 4096 or not isinstance(history_sources, list) or len(history_sources) != len(history):
+                    return 0
+                source_keys = set(value["source"])
+                if not all(key is None or isinstance(key, str) and key in source_keys for key in history_sources):
+                    return 0
                 current = pool[value["current"]] if value["current"] is not None else None
                 index = int(value["source_index"])
                 if not -1 <= index < max(1, len(source)) or (not source and index != -1):
@@ -212,6 +231,7 @@ class Queue:
             if not isinstance(original, list) or len(original) != len(keys) or not all(isinstance(key, str) for key in original) or set(original) != set(keys):
                 original = keys
             self.source, self.manual, self.history = source, manual, history[-1000:]
+            self.source_label, self._history_sources = label, history_sources[-1000:]
             self.source_index, self.current, self._original = index, current, original
             self.repeat = value.get("repeat") if value.get("repeat") in ("off", "all", "one") else "off"
             self.shuffled = bool(value.get("shuffled"))

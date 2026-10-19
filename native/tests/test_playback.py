@@ -377,3 +377,18 @@ def test_manual_addition_while_autoplay_is_loading_cancels_stale_radio(tmp_path)
     radio.succeeded.emit(request, {"items": [{"videoId": "staleradio1"}]})
     assert len(player.queue.source) == 1 and player._radio_request is None
     player.close()
+
+
+def test_source_label_survives_pagination_manual_queue_and_restart(tmp_path):
+    app = QCoreApplication.instance() or QCoreApplication([])
+    player = Playback(tmp_path, FakeWorker(), audio_factory=FakeAudio)
+    player.playTracks(TRACKS, source_label="Evening mix")
+    player.enqueue(TRACKS[:1])
+    player.appendContext(TRACKS[1:])
+    assert [entry["group"] for entry in player.entries] == ["Now playing", "Next in queue", "Next from Evening mix", "Next from Evening mix"]
+    player.close()
+    restored = Playback(tmp_path, FakeWorker(), audio_factory=FakeAudio)
+    assert restored.entries[-1]["group"] == "Next from Evening mix"
+    restored.playTracks(TRACKS)
+    assert restored.entries[-1]["group"] == "Next up"
+    restored.close()

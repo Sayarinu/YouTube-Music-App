@@ -92,7 +92,7 @@ class Playback(QObject):
     @Property("QVariantList", notify=changed)
     def entries(self):
         groups = (("Now playing", [self.queue.current] if self.queue.current else []),
-                  ("Next in queue", self.queue.manual), ("Next from source", self.queue.remaining))
+                  ("Next in queue", self.queue.manual), ("Next from " + self.queue.source_label if self.queue.source_label else "Next up", self.queue.remaining))
         return [{**entry["track"], "key": entry["key"], "current": group == "Now playing", "group": group,
                  "movable": group != "Now playing"} for group, entries in groups for entry in entries]
 
@@ -161,10 +161,10 @@ class Playback(QObject):
         return self._autoplay
 
     @Slot("QVariantList", int)
-    def playTracks(self, tracks, index=0):
+    def playTracks(self, tracks, index=0, source_label=""):
         self._transport_revision += 1
         self._prepared = {}
-        self.queue.replace([dict(track) for track in tracks], index)
+        self.queue.replace([dict(track) for track in tracks], index, source_label)
         self._failures = set()
         self._start()
 
@@ -179,10 +179,10 @@ class Playback(QObject):
         self._queue_changed()
 
     @Slot("QVariantList")
-    def playShuffledTracks(self, tracks):
+    def playShuffledTracks(self, tracks, source_label=""):
         self._transport_revision += 1
         self._prepared = {}
-        self.queue.replace([dict(track) for track in tracks])
+        self.queue.replace([dict(track) for track in tracks], source_label=source_label)
         self.queue.shuffle_all()
         self._failures = set()
         self._start()
@@ -498,6 +498,7 @@ class Playback(QObject):
         tracks = [track for track in result.get("items", []) if track.get("videoId") != video_id and track.get("available", True)]
         if tracks:
             self.queue.append_context(tracks)
+            self.queue.source_label = "Autoplay"
             self.queue.advance()
             self._start()
         else:

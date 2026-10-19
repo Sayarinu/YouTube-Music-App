@@ -44,7 +44,7 @@ def test_selection_history_and_removal_are_occurrence_based():
     assert names(queue.manual) == ["N"]  # Played entries never return to pending.
     assert queue.advance()["track"]["title"] == "N"
     assert queue.remove(0)
-    assert queue.current["track"]["title"] == "C"
+    assert queue.current["track"]["title"] == "B"
 
 
 def test_reorder_only_within_pending_groups_and_clear_keeps_current_and_source():
@@ -108,7 +108,7 @@ def test_empty_enqueue_selects_first_and_repeat_all_does_not_replay_manual_only_
 
 def test_version_two_roundtrip_preserves_groups_history_keys_and_position():
     queue = Queue()
-    queue.replace(tracks())
+    queue.replace(tracks(), source_label="Evening mix")
     queue.append(tracks("M", "N"))
     queue.advance()
     queue.repeat, queue.shuffled = "all", True
@@ -150,3 +150,34 @@ def test_invalid_state_is_rejected_atomically(mutate):
     invalid = deepcopy(before)
     mutate(invalid)
     assert queue.restore(invalid) == 0 and queue.snapshot() == before
+
+
+def test_previous_next_replays_source_without_reinserting_consumed_manual():
+    queue = Queue()
+    queue.replace(tracks())
+    queue.advance()
+    queue.previous()
+    assert names(queue.remaining) == ["B", "C"]
+    assert queue.advance()["track"]["title"] == "B"
+    queue.append(tracks("M"))
+    queue.advance()
+    queue.advance()
+    assert queue.current["track"]["title"] == "C"
+    queue.previous()
+    assert queue.current["track"]["title"] == "M" and not queue.manual
+    assert queue.advance()["track"]["title"] == "C"
+
+
+def test_removing_source_anchor_keeps_history_continuation_valid():
+    queue = Queue()
+    queue.replace(tracks())
+    queue.append(tracks("M"))
+    queue.advance()
+    queue.advance()
+    queue.previous()
+    queue.previous()
+    assert queue.current["track"]["title"] == "A"
+    queue.remove(0)
+    restored = Queue()
+    restored.restore(queue.snapshot())
+    assert restored.snapshot() == queue.snapshot()

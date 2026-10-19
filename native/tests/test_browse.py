@@ -48,7 +48,7 @@ def setup(tmp_path):
     account = Account(worker)
     view = CatalogView(worker, tmp_path / "metadata.sqlite3", account)
     played, queued, resets = [], [], []
-    player = SimpleNamespace(play=played.append, playTracks=lambda values, index=0: played.append(values), enqueue=lambda tracks, next=False: queued.append(tracks), appendContext=queued.append, resetSession=lambda: resets.append(True), manualQueueCleared=account.sessionChanged)
+    player = SimpleNamespace(play=played.append, playTracks=lambda values, index=0, source_label="": played.append(values), enqueue=lambda tracks, next=False: queued.append(tracks), appendContext=queued.append, resetSession=lambda: resets.append(True), manualQueueCleared=account.sessionChanged)
     browse = Browse(shell, account, view, player, tmp_path / "metadata.sqlite3")
     return app, browse, worker, account, view, played, queued, resets
 
@@ -125,3 +125,21 @@ def test_removing_loaded_entry_adjusts_the_next_page_offset(tmp_path):
     assert len(view.data["items"]) == 39 and view.data["cursor"] == 39
     view.more()
     assert worker.requests[-1][1]["offset"] == 39
+
+
+def test_collection_title_is_used_once_and_pagination_does_not_replace_it(tmp_path):
+    app, browse, worker, account, view, played, queued, resets = setup(tmp_path)
+    titles = []
+    browse.player.playTracks = lambda values, index=0, source_label="": titles.append(source_label)
+    browse.playCollection({"kind": "playlist", "id": "PLfixture", "title": "Selected collection"}, False)
+    worker.succeeded.emit(1, {"title": "Resolved collection", "items": [{"kind": "song"}], "cursor": 1})
+    worker.succeeded.emit(2, {"title": "Later page", "items": [{"kind": "song"}]})
+    assert titles == ["Resolved collection"] and len(queued) == 1
+
+
+def test_source_selection_does_not_cancel_unfinished_manual_collection(tmp_path):
+    app, browse, worker, account, view, played, queued, resets = setup(tmp_path)
+    browse.enqueue({"kind": "playlist", "id": "PLqueued"}, False)
+    browse.play({"kind": "song", "videoId": "newsource01", "title": "New source"})
+    worker.succeeded.emit(1, {"items": [{"kind": "song", "videoId": "manualsong1"}]})
+    assert played[0]["title"] == "New source" and queued[0][0]["videoId"] == "manualsong1"

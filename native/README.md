@@ -62,7 +62,7 @@ The native player owns the queue, audio-only source selection, transport, seek, 
 
 ### Priority queue
 
-“Add to queue” appends songs, albums or playlists to **Next in queue**, ahead of **Next from source**. “Play next” places them at the front of the manual group. Collections retain their song order and duplicates; downloaded metadata is used first, otherwise the full collection loads in a worker before it is added as one batch. Actions are applied in request order, with loading/error feedback. **Clear queued songs** also cancels unfinished additions.
+“Add to queue” appends songs, albums or playlists to **Next in queue**, ahead of **Next from [source name]**. “Play next” places them at the front of the manual group. Collections retain their song order and duplicates; downloaded metadata is used first, otherwise the full collection loads in a worker before it is added as one batch. Actions are applied in request order, with loading/error feedback. **Clear queued songs** also cancels unfinished additions.
 
 Playing a new song or collection starts that selection immediately and replaces the source while keeping pending manual songs. Shuffle and repeat-all apply to the source; manual songs play once. Repeat-one still repeats the current song. Selecting a later manual song skips earlier pending manual songs; selecting a source song keeps pending manual additions. Previous restarts after three seconds, otherwise follows played history without returning consumed songs to the pending groups. Next continues with pending manual songs, then the source. Reordering stays within each pending group.
 
