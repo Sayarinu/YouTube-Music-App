@@ -9,4 +9,3 @@
 - Keep shared Python/PySide6 and QML code portable across Linux, Windows and macOS. Use standard platform paths; isolate OS integrations and test portability early.
 - Complete the real-account compatibility gate before substantial native UI work. Do not present fixture success as real-account verification.
 - Keep browser sessions, cookies, signed media URLs, private screenshots and account data out of commits, logs and Linear tickets.
-

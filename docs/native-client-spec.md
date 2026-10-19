@@ -35,7 +35,7 @@ Handle disk-full, missing and corrupt files clearly without losing other complet
 ## Architecture and portability
 
 - Native rendering: Qt 6, Qt Quick/QML, PySide6. Use virtualized list views, asynchronous artwork and bounded caches; keep network, SQLite work and extraction off the GUI thread.
-- Catalog: ytmusicapi with small normalized MediaItem, Collection and paginated-result models. Preserve provider mutation identifiers and continuation tokens inside the catalog module. QML does not consume raw provider responses.
+- Catalog: ytmusicapi with small normalized MediaItem, Collection and paginated-result models. Preserve provider mutation identifiers and continuation tokens inside the catalog module. Run provider requests in a separate worker process: ytmusicapi changes process locale, while libmpv requires the C numeric locale. QML does not consume raw provider responses.
 - Authentication: guided local browser-session import and secure OS keyring storage. The user has explicitly authorized reusing the existing Tauri session for migration/proof. Keep credentials out of source, fixtures, process arguments, logs and tickets. Expiry produces a reconnect banner without blocking local audio.
 - Source resolution/downloads: yt-dlp managed workers, yt-dlp-ejs, Deno and FFmpeg/ffprobe. Preserve the best available authenticated audio-only format without routine transcoding. Cache remote sources only until expiry and retry expired resolution once.
 - Playback: libmpv through python-mpv. The app owns LocalFile/RemoteStream selection, queue state and upcoming-track preparation. Do not load the YouTube website for playback.
@@ -129,4 +129,3 @@ The current Tauri application remains available during native development and th
 - [Browser-session authentication](https://ytmusicapi.readthedocs.io/en/stable/setup/browser.html)
 - [yt-dlp dependencies and embedding](https://github.com/yt-dlp/yt-dlp)
 - [python-mpv](https://github.com/jaseg/python-mpv)
-
