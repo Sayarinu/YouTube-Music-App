@@ -25,9 +25,9 @@ Item {
                 Label { text: "Who can see this playlist?"; color: Theme.secondary }
                 RowLayout {
                     spacing: 8
-                    ActionButton { text: "Private"; selected: root.privacy === "PRIVATE"; onClicked: root.privacy = "PRIVATE" }
-                    ActionButton { text: "Unlisted"; selected: root.privacy === "UNLISTED"; onClicked: root.privacy = "UNLISTED" }
-                    ActionButton { text: "Public"; selected: root.privacy === "PUBLIC"; onClicked: root.privacy = "PUBLIC" }
+                    StateButton { text: "Private"; selected: root.privacy === "PRIVATE"; onClicked: root.privacy = "PRIVATE" }
+                    StateButton { text: "Unlisted"; selected: root.privacy === "UNLISTED"; onClicked: root.privacy = "UNLISTED" }
+                    StateButton { text: "Public"; selected: root.privacy === "PUBLIC"; onClicked: root.privacy = "PUBLIC" }
                 }
             }
             Label { Layout.fillWidth: true; text: actionsState.message; textFormat: Text.PlainText; visible: !!text; wrapMode: Text.Wrap; color: Theme.secondary }
@@ -35,8 +35,8 @@ Item {
         footer: RowLayout {
             spacing: 10
             Item { Layout.fillWidth: true }
-            ActionButton { text: "Cancel"; implicitWidth: 92; enabled: !actionsState.busy; onClicked: editor.close() }
-            ActionButton { id: save; text: "Save"; primary: true; implicitWidth: 76; enabled: !!name.text.trim() && !actionsState.busy && (accountState.connected || appState.fixtureMode); onClicked: if (root.operation === "playlist_create") libraryState.create(name.text, root.privacy); else libraryState.rename(root.target.id, name.text) }
+            StateButton { text: "Cancel"; implicitWidth: 92; enabled: !actionsState.busy; onClicked: editor.close() }
+            StateButton { id: save; text: "Save"; primary: true; implicitWidth: 76; enabled: !!name.text.trim() && !actionsState.busy && (accountState.connected || appState.fixtureMode); onClicked: if (root.operation === "playlist_create") libraryState.create(name.text, root.privacy); else libraryState.rename(root.target.id, name.text) }
         }
         onRejected: editor.close()
         onOpened: { name.forceActiveFocus(); name.selectAll(); if (root.operation === "playlist_create") root.privacy = "PRIVATE" }
@@ -54,8 +54,8 @@ Item {
         footer: RowLayout {
             spacing: 10
             Item { Layout.fillWidth: true }
-            ActionButton { text: "Cancel"; implicitWidth: 92; enabled: !actionsState.busy; onClicked: removal.close() }
-            ActionButton { text: "Delete"; destructive: true; implicitWidth: 84; enabled: !actionsState.busy && (accountState.connected || appState.fixtureMode); onClicked: libraryState.removePlaylist(root.target.id) }
+            StateButton { text: "Cancel"; implicitWidth: 92; enabled: !actionsState.busy; onClicked: removal.close() }
+            StateButton { text: "Delete"; destructive: true; implicitWidth: 84; enabled: !actionsState.busy && (accountState.connected || appState.fixtureMode); onClicked: libraryState.removePlaylist(root.target.id) }
         }
         onRejected: removal.close()
     }

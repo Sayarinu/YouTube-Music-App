@@ -44,7 +44,7 @@ Rectangle {
         RowLayout {
             Layout.fillWidth: true
             Item { Layout.fillWidth: true }
-            ActionButton {
+            StateButton {
                 text: "Clear queue"
                 implicitHeight: 34
                 enabled: playerState.manualCount > 0 || browseState.queueBusy
