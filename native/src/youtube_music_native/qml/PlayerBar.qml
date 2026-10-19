@@ -39,7 +39,7 @@ Rectangle {
         anchors.right: tools.left; anchors.rightMargin: 12
         height: parent.height
         Row {
-            anchors.horizontalCenter: parent.horizontalCenter; y: 6; spacing: 4
+            anchors.horizontalCenter: parent.horizontalCenter; y: 4; spacing: 4
             IconButton { iconName: "shuffle"; iconColor: playerState.shuffled ? Theme.accent : Theme.secondary; tip: "Shuffle"; enabled: playerState.hasTrack; onClicked: appState.requestAction("shuffle") }
             IconButton { iconName: "previous"; tip: "Previous"; enabled: playerState.hasTrack; onClicked: playerState.previous() }
             IconButton { iconName: playerState.playing ? "pause" : "play"; iconSize: 28; iconColor: Theme.onAccent; tip: playerState.playing ? "Pause" : "Play"; enabled: playerState.hasTrack; onClicked: playerState.togglePlayback(); background: Rectangle { radius: 22; color: parent.hovered ? Theme.accentHover : Theme.accent; border.width: parent.visualFocus ? 2 : 0; border.color: Theme.foreground } }
@@ -52,7 +52,7 @@ Rectangle {
             objectName: "playbackSeek"
             x: 46; y: 48; width: parent.width - 92; height: 40
             from: 0; to: 1; value: playerState.progress
-            trackColor: "#574374"
+            trackColor: Theme.border
             enabled: playerState.hasTrack; Accessible.name: "Playback position"
             onMoved: playerState.seekFraction(value)
         }
