@@ -27,6 +27,7 @@ class ShellController(QObject):
         self._shelves = self._fixture.get("shelves", [])
         self._playlists = self._fixture.get("playlists", [])
         self._expanded, self._player_tab = False, "Up next"
+        self._queue_open = False
 
     def _integer_setting(self, key, default):
         try:
@@ -83,6 +84,7 @@ class ShellController(QObject):
         if page not in {"Home", "Explore", "Library", "Downloads", "Search"}:
             return
         self._page = page
+        self._queue_open = False
         self.setExpanded(False)
         self.pageChanged.emit()
         self.navigationRequested.emit(page)
@@ -119,6 +121,21 @@ class ShellController(QObject):
         self.actionRequested.emit(action)
 
     @Property(bool, notify=playerViewChanged)
+    def queueOpen(self):
+        return self._queue_open
+
+    @Slot(bool)
+    def setQueueOpen(self, value):
+        value = bool(value)
+        if value != self._queue_open:
+            self._queue_open = value
+            self.playerViewChanged.emit()
+
+    @Slot()
+    def toggleQueue(self):
+        self.setQueueOpen(not self._queue_open)
+
+    @Property(bool, notify=playerViewChanged)
     def expanded(self):
         return self._expanded
 
@@ -129,6 +146,8 @@ class ShellController(QObject):
     @Slot(bool)
     def setExpanded(self, value):
         self._expanded = value
+        if value:
+            self._queue_open = False
         self.playerViewChanged.emit()
 
     @Slot(str)

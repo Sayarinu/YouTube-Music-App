@@ -70,26 +70,27 @@ ApplicationWindow {
             id: navigation
             x: 8; y: 72; width: sidebar.width - 16
             Repeater {
-                model: [{label:"Home",icon:"home"}, {label:"Search",icon:"search"}, {label:"Explore",icon:"explore"}, {label:"Library",icon:"library"}, {label:"Downloads",icon:"download"}]
+                model: [{label:"Home",icon:"home"}, {label:"Explore",icon:"explore"}, {label:"Library",icon:"library"}, {label:"Downloads",icon:"download"}]
                 delegate: Button {
                     id: nav
                     required property var modelData
+                    property bool selected: appState.page === nav.text || nav.text === "Explore" && appState.page === "Search"
                     width: navigation.width
                     height: 48
                     padding: 0
                     text: modelData.label
                     Accessible.name: text
-                    onClicked: { if (text === "Search") search.forceActiveFocus(); else appState.navigate(text) }
+                    onClicked: appState.navigate(text)
                     background: Rectangle {
                         radius: 8
-                        color: appState.page === nav.text ? Theme.selected : nav.hovered ? Theme.hover : "transparent"
+                        color: nav.selected ? Theme.selected : nav.hovered ? Theme.hover : "transparent"
                         border.width: nav.visualFocus ? 2 : 0
                         border.color: Theme.accent
-                        Rectangle { x: 0; y: 12; width: 3; height: 24; radius: 2; color: Theme.accent; visible: appState.page === nav.text }
+                        Rectangle { x: 0; y: 12; width: 3; height: 24; radius: 2; color: Theme.accent; visible: nav.selected }
                     }
                     contentItem: Row {
                         leftPadding: 16; spacing: 20
-                        Symbol { anchors.verticalCenter: parent.verticalCenter; name: nav.modelData.icon; color: appState.page === nav.text ? Theme.accent : Theme.secondary }
+                        Symbol { anchors.verticalCenter: parent.verticalCenter; name: nav.modelData.icon; color: nav.selected ? Theme.accent : Theme.secondary }
                         Text { anchors.verticalCenter: parent.verticalCenter; visible: window.wideNavigation; text: nav.text; color: Theme.foreground; font.family: Theme.bodyFont; font.pixelSize: 16 }
                     }
                     ToolTip.text: text
@@ -262,6 +263,21 @@ ApplicationWindow {
 
     }
 
+    QueueDrawer {
+        id: queueDrawer
+        anchors.right: parent.right
+        anchors.rightMargin: 12
+        anchors.top: header.bottom
+        anchors.topMargin: 8
+        anchors.bottom: player.top
+        anchors.bottomMargin: 12
+        width: appState.queueOpen && !appState.expanded ? Math.min(420, window.width * 0.42) : 0
+        clip: true
+        z: 6
+        visible: width > 0
+        Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+    }
+
     PlayerBar {
         id: player
         anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom
@@ -336,5 +352,6 @@ ApplicationWindow {
     Shortcut { sequence: "R"; enabled: window.playbackShortcuts; onActivated: appState.requestAction("repeat") }
     Shortcut { sequence: "F"; enabled: window.playbackShortcuts && playerState.hasTrack; onActivated: appState.requestAction("expandPlayer") }
     Shortcut { sequence: "Escape"; enabled: window.playbackShortcuts && appState.expanded; onActivated: appState.setExpanded(false) }
+    Shortcut { sequence: "Escape"; enabled: window.playbackShortcuts && appState.queueOpen && !appState.expanded; onActivated: appState.setQueueOpen(false) }
     Shortcut { sequence: "?"; enabled: window.playbackShortcuts; onActivated: shortcutHelp.open() }
 }

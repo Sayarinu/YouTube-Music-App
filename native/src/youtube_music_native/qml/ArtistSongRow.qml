@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import "Theme.js" as Theme
 
 FocusScope {
@@ -15,10 +16,20 @@ FocusScope {
     Rectangle { anchors.fill: parent; color: hover.hovered ? Theme.surface : "transparent"; border.color: root.activeFocus ? Theme.accent : "transparent" }
     Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Theme.surface }
     Cover { x: 8; anchors.verticalCenter: parent.verticalCenter; width: 32; height: 32; radius: 3; source: root.media.thumbnail || ""; mediaKey: root.media.videoId || root.media.id || ""; accent: root.media.accent || Theme.selected }
-    Text { x: 64; anchors.verticalCenter: parent.verticalCenter; width: parent.width * 0.30; text: root.media.title || ""; textFormat: Text.PlainText; elide: Text.ElideRight; color: "white"; font.pixelSize: 14 }
+    Text { x: 64; anchors.verticalCenter: parent.verticalCenter; width: parent.width * 0.30; text: root.media.title || ""; textFormat: Text.PlainText; elide: Text.ElideRight; color: hover.hovered ? Theme.accentHover : "white"; font.pixelSize: 14; font.underline: hover.hovered }
     Text { x: parent.width * 0.39; anchors.verticalCenter: parent.verticalCenter; width: parent.width * 0.13; text: root.media.artist || ""; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.secondary; font.pixelSize: 14; visible: root.width > 650 }
     Text { x: parent.width * 0.54; anchors.verticalCenter: parent.verticalCenter; width: parent.width * 0.13; text: root.media.views ? root.media.views + " plays" : ""; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.secondary; font.pixelSize: 14; visible: root.width > 650 }
-    Text { x: parent.width * 0.69; anchors.verticalCenter: parent.verticalCenter; width: parent.width * 0.23; text: root.media.album ? root.media.album.name || "" : ""; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.secondary; font.pixelSize: 14 }
+    Button {
+        id: albumLink
+        z: 2
+        x: parent.width * 0.69; anchors.verticalCenter: parent.verticalCenter; width: parent.width * 0.23; height: 36
+        text: root.media.album ? root.media.album.name || "" : ""
+        enabled: !!(root.media.album && root.media.album.id)
+        padding: 0; leftPadding: 0; rightPadding: 0; flat: true
+        Accessible.name: "Open album " + text
+        contentItem: Text { text: albumLink.text; textFormat: Text.PlainText; elide: Text.ElideRight; color: albumLink.hovered ? Theme.foreground : Theme.secondary; font.pixelSize: 14; verticalAlignment: Text.AlignVCenter; font.underline: albumLink.hovered }
+        onClicked: browseState.open({kind: "album", id: root.media.album.id, title: text})
+    }
     HoverHandler { id: hover }
     MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton; cursorShape: Qt.PointingHandCursor; onClicked: mouse => { if (mouse.button === Qt.RightButton) appState.showMenu(root.media, {}); else root.activated(root.media) } }
     IconButton { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; iconName: "more"; tip: "More options for " + (root.media.title || "song"); visible: hover.hovered || root.activeFocus; onClicked: appState.showMenu(root.media, {}) }

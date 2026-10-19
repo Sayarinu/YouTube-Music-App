@@ -133,8 +133,9 @@ class Library(QObject):
             self.dialogRequested.emit(action, dict(media))
 
     @Slot(str)
-    def create(self, name):
-        self.actions.run("playlist_create", {"title": name})
+    @Slot(str, str)
+    def create(self, name, privacy="PRIVATE"):
+        self.actions.run("playlist_create", {"title": name, "privacy": privacy})
 
     @Slot(str, str)
     def rename(self, identifier, name):
@@ -225,7 +226,7 @@ class Library(QObject):
             self.shell.setPlaylists(playlists)
             QTimer.singleShot(2000, self.browse.refreshPlaylists)
             if action == "playlist_create":
-                self.browse.showCollection({"kind": "playlist", "id": identifier, "title": result["title"], "author": self.account.profile.get("name", "Your music"), "privacy": "PRIVATE", "editable": True, "items": [], "shelves": [], "trackCount": 0, "cursor": None})
+                self.browse.showCollection({"kind": "playlist", "id": identifier, "title": result["title"], "author": self.account.profile.get("name", "Your music"), "privacy": result.get("privacy", "PRIVATE"), "editable": True, "items": [], "shelves": [], "trackCount": 0, "cursor": None})
             elif action == "playlist_delete":
                 self.browse.forgetPlaylist(identifier)
                 self.select("Playlists")

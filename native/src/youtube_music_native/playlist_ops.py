@@ -71,10 +71,16 @@ def perform(client, action, payload):
     result = {"action": action}
     if action == "playlist_create":
         name = title(payload.get("title"))
-        created = client.create_playlist(name, "", privacy_status="PRIVATE")
+        privacy = payload.get("privacy", "PRIVATE")
+        if privacy not in {"PRIVATE", "UNLISTED", "PUBLIC"}:
+            raise PlaylistError("Choose Private, Unlisted or Public for this playlist.")
+        created = client.create_playlist(name, "", privacy_status=privacy)
         if not isinstance(created, str) or created.startswith("STATUS_"):
             raise PlaylistError("The playlist could not be created. Retry.")
-        return {**result, "id": identifier(created), "title": name}
+        created_result = {**result, "id": identifier(created), "title": name}
+        if "privacy" in payload:
+            created_result["privacy"] = privacy
+        return created_result
     playlist = identifier(payload.get("id"))
     result["id"] = playlist
     if action == "playlist_rename":

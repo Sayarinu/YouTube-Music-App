@@ -50,8 +50,8 @@ Rectangle {
         id: tools
         anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter
         IconButton { iconName: "more"; tip: "Current song options"; enabled: playerState.hasTrack; onClicked: appState.showMenu(playerState.currentTrack, {}) }
-        IconButton { iconName: "lyrics"; tip: "Lyrics"; iconColor: appState.expanded && appState.playerTab === "Lyrics" ? Theme.accent : Theme.secondary; onClicked: { appState.setPlayerTab("Lyrics"); appState.setExpanded(true) } }
-        IconButton { iconName: "queue"; tip: "Queue"; iconColor: appState.expanded && appState.playerTab === "Up next" ? Theme.accent : Theme.secondary; onClicked: { appState.setPlayerTab("Up next"); appState.setExpanded(true) } }
+        IconButton { iconName: "queue"; tip: "Queue"; selected: appState.queueOpen; iconColor: selected ? Theme.accent : Theme.secondary; onClicked: { if (appState.expanded) appState.setExpanded(false); appState.toggleQueue() } }
+        IconButton { iconName: "music"; tip: "Lyrics"; selected: appState.expanded && appState.playerTab === "Lyrics"; iconColor: selected ? Theme.accent : Theme.secondary; onClicked: { appState.setQueueOpen(false); appState.setPlayerTab("Lyrics"); appState.setExpanded(true) } }
         IconButton { id: volume; iconName: appState.volume > 0 ? "volume" : "muted"; tip: root.compact ? "Volume" : appState.volume > 0 ? "Mute" : "Unmute"; onClicked: root.compact ? volumePopup.open() : appState.toggleMute() }
         AccentSlider { width: 84; height: 44; visible: !root.compact; from: 0; to: 100; value: appState.volume; Accessible.name: "Volume"; onMoved: appState.setVolume(Math.round(value)) }
         IconButton { iconName: appState.expanded ? "down" : "up"; tip: appState.expanded ? "Close player page" : "Expand player"; onClicked: appState.requestAction("expandPlayer") }

@@ -9,6 +9,7 @@ ToolButton {
     property color iconColor: Theme.foreground
     property int iconSize: 24
     property bool outlined: false
+    property bool selected: false
     implicitWidth: 44
     implicitHeight: 44
     Accessible.name: tip
@@ -17,9 +18,10 @@ ToolButton {
     ToolTip.delay: 600
     background: Rectangle {
         radius: width / 2
-        color: root.down ? Theme.border : root.hovered ? Theme.hover : "transparent"
-        border.width: root.visualFocus ? 2 : root.outlined ? 1 : 0
-        border.color: root.visualFocus ? Theme.accent : Theme.border
+        color: root.down ? Theme.border : root.hovered ? Theme.hover : root.selected ? Theme.selected : "transparent"
+        border.width: root.visualFocus ? 2 : root.outlined || root.selected ? 1 : 0
+        border.color: root.visualFocus || root.selected ? Theme.accent : Theme.border
+        Behavior on color { ColorAnimation { duration: 120 } }
     }
     contentItem: Item {
         Symbol {
