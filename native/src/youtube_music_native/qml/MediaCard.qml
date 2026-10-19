@@ -114,8 +114,8 @@ FocusScope {
     }
     DownloadButton {
         id: downloadButton
-        x: 8; anchors.bottom: parent.bottom; width: 36; height: 32
-        visible: root.media.kind !== "artist" && (cardHover.hovered || root.activeFocus || downloadButton.status === "complete" || downloadButton.status === "ready")
+        x: 8; anchors.top: subtitle.bottom; anchors.topMargin: 4; width: 36; height: 32
+        visible: root.media.kind !== "artist" && (cardHover.hovered || downloadButton.activeFocus || downloadButton.status === "complete" || downloadButton.status === "ready" || downloadButton.status === "downloading" || downloadButton.status === "queued")
         media: ({kind: root.song ? "song" : root.media.kind, id: root.media.videoId || root.media.id || "", videoId: root.media.videoId || "", title: root.media.title || "", thumbnail: root.media.thumbnail || ""})
     }
 }

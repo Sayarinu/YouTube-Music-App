@@ -12,9 +12,9 @@ IconButton {
         return ({})
     }
     readonly property string status: song ? (downloadsState.trackStates[mediaId] || "") : entry.state || ""
-    iconName: status === "complete" || status === "ready" ? "downloadCheck" : "download"
-    tip: status === "complete" || status === "ready" ? "Downloaded" : status === "downloading" || status === "queued" ? "Cancel download" : status === "damaged" ? "Repair download" : "Download"
-    iconColor: status === "damaged" ? "#ffb4a6" : Theme.foreground
+    iconName: status === "complete" || status === "ready" ? "circleCheck" : "download"
+    tip: status === "complete" || status === "ready" ? entry.state === "complete" ? "Remove download" : "Downloaded" : status === "downloading" || status === "queued" ? "Cancel download" : status === "damaged" ? "Repair download" : "Download"
+    iconColor: status === "complete" || status === "ready" ? Theme.accent : status === "damaged" ? "#ffb4a6" : Theme.foreground
     enabled: !!mediaId && !(song && (status === "complete" || status === "ready") && entry.state !== "complete")
     onClicked: {
         if ((entry.state === "complete" || entry.state === "ready") && entry.key) downloadsState.remove(entry.key)

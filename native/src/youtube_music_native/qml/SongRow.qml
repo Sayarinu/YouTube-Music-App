@@ -46,7 +46,7 @@ FocusScope {
     Column {
         x: root.tableLayout ? root.showArtwork ? 100 : 48 : root.showArtwork ? root.number > 0 ? 104 : 72 : 56
         anchors.verticalCenter: parent.verticalCenter
-        width: (root.showAlbum ? parent.width * 0.54 : parent.width - (root.showDuration ? 112 : 56)) - x; spacing: 3
+        width: (root.showAlbum ? parent.width * 0.54 : parent.width - (root.showDuration ? 112 : 104)) - x; spacing: 3
         opacity: root.media.available === false ? 0.5 : 1
         Text { width: parent.width; text: root.media.title || "Unavailable song"; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.foreground; font.pixelSize: 14 }
         Row {
@@ -73,8 +73,8 @@ FocusScope {
     MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton; cursorShape: Qt.PointingHandCursor; onClicked: function(mouse) { if (mouse.button === Qt.RightButton) root.menuRequested(root.media); else root.activateSong() } }
     DownloadButton {
         id: downloadButton
-        anchors.right: parent.right; anchors.rightMargin: 40; anchors.verticalCenter: parent.verticalCenter
-        visible: hover.hovered || root.activeFocus || downloadButton.status === "complete" || downloadButton.status === "ready"
+        anchors.right: parent.right; anchors.rightMargin: 56; anchors.verticalCenter: parent.verticalCenter
+        visible: hover.hovered || downloadButton.activeFocus || downloadButton.status === "complete" || downloadButton.status === "ready" || downloadButton.status === "downloading" || downloadButton.status === "queued"
         media: ({kind: "song", id: root.media.videoId || root.media.id || "", videoId: root.media.videoId || "", title: root.media.title || "", thumbnail: root.media.thumbnail || ""})
     }
     IconButton { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; iconName: "more"; tip: "More options for " + (root.media.title || "song"); visible: hover.hovered || root.activeFocus; onClicked: root.menuRequested(root.media) }
