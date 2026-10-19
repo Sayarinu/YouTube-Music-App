@@ -217,9 +217,9 @@ class Playback(QObject):
         self._stopped, self._device_wait = False, False
         if self.worker:
             if self._request is not None:
-                self.worker.cancelQueued(self._request)
+                self.worker.cancel(self._request)
             if self._prepare_request is not None:
-                self.worker.cancelQueued(self._prepare_request)
+                self.worker.cancel(self._prepare_request)
         if self.radio_worker and self._radio_request is not None:
             self.radio_worker.cancelQueued(self._radio_request)
         self._radio_request, self._prepare_request, self._preparing_video = None, None, None
@@ -546,7 +546,7 @@ class Playback(QObject):
                 if video_id in self._prepared or self._prepare_request is not None and video_id == self._preparing_video:
                     return
                 if self._prepare_request is not None:
-                    self.worker.cancelQueued(self._prepare_request)
+                    self.worker.cancel(self._prepare_request)
                 self._preparing_video = video_id
                 self._prepare_request = self.worker.request("resolve", {"data_dir": str(self.data_dir), "videoId": video_id})
 

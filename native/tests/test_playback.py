@@ -11,6 +11,7 @@ class FakeWorker(QObject):
         super().__init__()
         self.requests = []
         self.resets = 0
+        self.cancelled = []
 
     def request(self, operation, payload):
         self.requests.append((operation, payload))
@@ -18,6 +19,9 @@ class FakeWorker(QObject):
 
     def cancelQueued(self, identifier):
         pass
+
+    def cancel(self, identifier):
+        self.cancelled.append(identifier)
 
     def close(self):
         pass
@@ -78,6 +82,23 @@ def test_queue_restores_paused_and_stale_resolver_results_cannot_start_audio(tmp
     assert restored.position == 32 and not restored.playing and restored.audio is None
     assert "private.invalid" not in restored.path.read_text()
     restored.close()
+
+
+def test_manual_play_cancels_active_prefetch_and_ignores_its_late_result(tmp_path):
+    app = QCoreApplication.instance() or QCoreApplication([])
+    worker = FakeWorker()
+    player = Playback(tmp_path, worker, audio_factory=FakeAudio)
+    player.playTracks(TRACKS)
+    worker.succeeded.emit(1, {"kind": "local", "source": "/fixture/first.wav"})
+    prefetch = player._prepare_request
+    assert prefetch is not None
+    player.play(TRACKS[0])
+    assert prefetch in worker.cancelled
+    worker.succeeded.emit(prefetch, {"kind": "remote", "source": "https://media.invalid/stale", "videoId": TRACKS[1]["videoId"]})
+    assert not player._prepared
+    worker.succeeded.emit(len(worker.requests), {"kind": "local", "source": "/fixture/first.wav"})
+    assert player.sourceKind == "local" and player.playing
+    player.close()
 
 
 def test_failed_source_retries_once_then_skips_and_prepares_upcoming(tmp_path):
