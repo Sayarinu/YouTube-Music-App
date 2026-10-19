@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import "Theme.js" as Theme
 
 FocusScope {
@@ -53,7 +54,7 @@ FocusScope {
             anchors.fill: parent
             acceptedButtons: Qt.LeftButton | Qt.RightButton
             cursorShape: Qt.PointingHandCursor
-            onClicked: mouse => { root.forceActiveFocus(); if (mouse.button === Qt.RightButton) appState.showMenu(root.media, root.menuContext); else root.activated(root.media) }
+            onClicked: mouse => { root.forceActiveFocus(); if (mouse.button === Qt.RightButton) appState.showMenu(root.media, root.menuContext); else root.playRequested(root.media) }
         }
         IconButton { anchors.right: parent.right; anchors.top: parent.top; width: 36; height: 36; iconName: "more"; tip: "More options for " + (root.media.title || "music"); visible: hover.hovered || root.activeFocus; onClicked: appState.showMenu(root.media, root.menuContext) }
         Rectangle {
@@ -69,32 +70,54 @@ FocusScope {
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.playRequested(root.media) }
         }
     }
-    Text {
+    Button {
         id: title
         anchors.top: cover.bottom
         anchors.topMargin: 12
         x: 16; width: parent.width - 32
         text: root.media.title || ""
-        textFormat: Text.PlainText
-        color: Theme.foreground
-        font.family: Theme.bodyFont
-        font.pixelSize: 14
-        font.weight: Font.Bold
-        wrapMode: Text.Wrap
-        maximumLineCount: 1
-        elide: Text.ElideRight
+        height: 22
+        padding: 0; leftPadding: 0; rightPadding: 0; flat: true
+        Accessible.name: "Open " + (root.media.kind || "song") + " " + text
+        contentItem: Text {
+            text: title.text
+            textFormat: Text.PlainText
+            color: title.hovered ? Theme.accentHover : Theme.foreground
+            font.family: Theme.bodyFont
+            font.pixelSize: 14
+            font.weight: Font.Bold
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideRight
+            font.underline: title.hovered
+        }
+        onClicked: browseState.open(root.media)
     }
-    Text {
+    Row {
+        id: metadata
         anchors.top: title.bottom
         anchors.topMargin: 6
         x: 16; width: parent.width - 32
-        text: (root.media.label || (root.media.kind ? root.media.kind.charAt(0).toUpperCase() + root.media.kind.slice(1) : "Song")) + (root.media.artist ? " · " + root.media.artist : "")
-        textFormat: Text.PlainText
-        color: Theme.secondary
-        font.family: Theme.bodyFont
-        font.pixelSize: 14
-        wrapMode: Text.Wrap
-        maximumLineCount: 2
-        elide: Text.ElideRight
+        height: 20
+        spacing: 5
+        Text {
+            text: root.media.label || (root.media.kind ? root.media.kind.charAt(0).toUpperCase() + root.media.kind.slice(1) : "Song")
+            textFormat: Text.PlainText; color: Theme.secondary; font.family: Theme.bodyFont; font.pixelSize: 14
+            height: metadata.height; verticalAlignment: Text.AlignVCenter
+        }
+        Text { visible: artistLink.visible; text: "·"; color: Theme.secondary; font.pixelSize: 14; height: metadata.height; verticalAlignment: Text.AlignVCenter }
+        Button {
+            id: artistLink
+            visible: !!(root.media.artists && root.media.artists.length && root.media.artists[0].id)
+            text: visible ? root.media.artists[0].name || root.media.artist || "" : root.media.artist || ""
+            height: metadata.height; width: Math.max(0, metadata.width - 72)
+            padding: 0; leftPadding: 0; rightPadding: 0; flat: true; enabled: visible
+            Accessible.name: "Open artist " + text
+            contentItem: Text {
+                text: artistLink.text; textFormat: Text.PlainText; color: artistLink.hovered ? Theme.foreground : Theme.secondary
+                font.family: Theme.bodyFont; font.pixelSize: 14; verticalAlignment: Text.AlignVCenter
+                elide: Text.ElideRight; font.underline: artistLink.hovered
+            }
+            onClicked: browseState.open({kind: "artist", id: root.media.artists[0].id, title: text})
+        }
     }
 }

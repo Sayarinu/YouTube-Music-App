@@ -17,8 +17,30 @@ Rectangle {
         Cover { id: cover; anchors.verticalCenter: parent.verticalCenter; width: 52; height: 52; radius: 8; source: playerState.currentTrack.thumbnail || ""; mediaKey: playerState.currentTrack.videoId || playerState.currentTrack.id || ""; accent: Theme.selected }
         Column {
             x: 64; width: parent.width - x - like.width; anchors.verticalCenter: parent.verticalCenter; spacing: 5
-            Text { width: parent.width; text: playerState.currentTrack.title || "Nothing playing"; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.foreground; font.bold: true; font.pixelSize: 14 }
-            Text { width: parent.width; text: playerState.currentTrack.artist || "Choose a song"; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.secondary; font.pixelSize: 12 }
+            Button {
+                id: currentTitle
+                width: parent.width; height: 20
+                text: playerState.currentTrack.title || "Nothing playing"
+                padding: 0; leftPadding: 0; rightPadding: 0; flat: true
+                Accessible.name: "Open album for " + text
+                contentItem: Text { text: currentTitle.text; textFormat: Text.PlainText; elide: Text.ElideRight; color: currentTitle.hovered ? Theme.accentHover : Theme.foreground; font.bold: true; font.pixelSize: 14; verticalAlignment: Text.AlignVCenter; font.underline: currentTitle.hovered }
+                onClicked: {
+                    var track = playerState.currentTrack
+                    if (track.album && track.album.id) browseState.open({kind: "album", id: track.album.id, title: track.album.name || track.title})
+                    else browseState.open(track)
+                }
+            }
+            Button {
+                id: currentArtist
+                width: parent.width; height: 18
+                visible: !!(playerState.currentTrack.artists && playerState.currentTrack.artists.length && playerState.currentTrack.artists[0].id)
+                text: visible ? playerState.currentTrack.artists[0].name || playerState.currentTrack.artist || "" : playerState.currentTrack.artist || "Choose a song"
+                padding: 0; leftPadding: 0; rightPadding: 0; flat: true; enabled: visible
+                Accessible.name: "Open artist " + text
+                contentItem: Text { text: currentArtist.text; textFormat: Text.PlainText; elide: Text.ElideRight; color: currentArtist.hovered ? Theme.foreground : Theme.secondary; font.pixelSize: 12; verticalAlignment: Text.AlignVCenter; font.underline: currentArtist.hovered }
+                onClicked: browseState.open({kind: "artist", id: playerState.currentTrack.artists[0].id, title: text})
+            }
+            Text { width: parent.width; visible: !currentArtist.visible; text: currentArtist.text; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.secondary; font.pixelSize: 12 }
         }
         IconButton { id: like; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; iconName: "like"; tip: playerState.currentTrack.rating === "LIKE" ? "Remove like" : "Like"; iconColor: playerState.currentTrack.rating === "LIKE" ? Theme.accent : Theme.secondary; enabled: playerState.hasTrack && !actionsState.busy && (accountState.connected || appState.fixtureMode); onClicked: appState.requestAction("like") }
     }
