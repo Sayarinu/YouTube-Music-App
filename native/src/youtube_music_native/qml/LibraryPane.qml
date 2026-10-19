@@ -14,7 +14,7 @@ Item {
         Item {
             Row {
                 width: parent.width; height: 52; spacing: 24; visible: !root.history
-                Button { id: libraryTab; text: "LIBRARY"; flat: true; height: 52; palette.windowText: "white"; onClicked: libraryState.select("Playlists"); Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 2; color: "white" } }
+                Button { id: libraryTab; text: "LIBRARY"; flat: true; height: 52; palette.windowText: "white"; onClicked: libraryState.select("Playlists"); Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 2; color: Theme.accent } }
                 Button { text: "DOWNLOADS"; flat: true; height: 52; palette.windowText: Theme.secondary; onClicked: appState.navigate("Downloads") }
             }
             Rectangle { y: 52; height: 1; width: parent.width; color: Theme.border; visible: !root.history }

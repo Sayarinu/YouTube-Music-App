@@ -10,6 +10,7 @@ import wave
 
 from PySide6.QtCore import QObject, QTimer, Qt
 from PySide6.QtGui import QAccessible, QColor, QGuiApplication, QImage
+from PySide6.QtQml import QQmlProperty
 from PySide6.QtTest import QTest
 
 from youtube_music_native import app
@@ -226,7 +227,34 @@ def main():
                             results.append({"view": name, "width": size[0], "height": size[1]})
                     if args.native_gpu:
                         assert state["rounded_artwork"] > 0
+                    browse.open({"kind": "artist", "id": "UCfixture"})
+                    QTest.qWait(80)
+                    for name in ("artistShuffle", "artistMix", "artistSubscribe"):
+                        button = window.findChild(QObject, name)
+                        button.forceActiveFocus(Qt.FocusReason.TabFocusReason)
+                        QTest.qWait(20)
+                        assert button.property("visualFocus")
+                        assert QQmlProperty(button.property("background"), "border.width").read() == 2
                     browse.open({"kind": "playlist", "id": "PLfixture"})
+                    view.patch({"subtitle": "First line\nSecond line\nThird line"})
+                    QTest.qWait(80)
+                    toggle = window.findChild(QObject, "descriptionToggle")
+                    assert toggle.isVisible()
+                    toggle.clicked.emit()
+                    QTest.qWait(30)
+                    assert toggle.isVisible() and toggle.property("text") == "Less"
+                    assert not window.findChild(QObject, "collectionDescription").property("truncated")
+                    downloads._initialized = False
+                    downloads.changed.emit()
+                    view.patch({"thumbnail": "file:///unavailable-synthetic-art.png"})
+                    QTest.qWait(30)
+                    backdrop = window.findChild(QObject, "backdropImage")
+                    assert backdrop.property("source").isEmpty()
+                    downloads._artwork["playlist:PLfixture"] = uri
+                    downloads._initialized = True
+                    downloads.changed.emit()
+                    QTest.qWait(80)
+                    assert backdrop.property("source").toString() == uri
                     view._error = "The provider is unavailable. Downloaded music remains available. " * 3
                     view.changed.emit()
                     QTest.qWait(80)

@@ -11,10 +11,14 @@ Item {
     Rectangle { anchors.fill: parent; gradient: Gradient { GradientStop { position: 0; color: Theme.selected } GradientStop { position: 1; color: Theme.background } } }
     Image {
         id: artwork
+        objectName: "backdropImage"
         anchors.fill: parent; visible: false; asynchronous: true
         // The backdrop is deliberately low resolution; the foreground cover stays sharp.
         sourceSize.width: 640; sourceSize.height: 240
-        source: root.mediaKey && downloadsState.artwork[root.mediaKey] !== undefined ? downloadsState.artwork[root.mediaKey] : root.source
+        source: {
+            if (root.mediaKey && !downloadsState.initialized) return ""
+            return root.mediaKey && downloadsState.artwork[root.mediaKey] !== undefined ? downloadsState.artwork[root.mediaKey] : root.source
+        }
         fillMode: Image.PreserveAspectCrop
     }
     MultiEffect {

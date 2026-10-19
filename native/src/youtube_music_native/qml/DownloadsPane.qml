@@ -34,7 +34,7 @@ Item {
             Row {
                 width: parent.width; height: 52; spacing: 24
                 Button { text: "LIBRARY"; flat: true; height: 52; palette.windowText: Theme.secondary; onClicked: libraryState.select("Playlists") }
-                Button { text: "DOWNLOADS"; flat: true; height: 52; palette.windowText: "white"; Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 2; color: "white" } }
+                Button { text: "DOWNLOADS"; flat: true; height: 52; palette.windowText: "white"; Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 2; color: Theme.accent } }
             }
             Rectangle { y: 52; height: 1; width: parent.width; color: Theme.border }
             Row {

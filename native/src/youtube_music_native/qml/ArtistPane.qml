@@ -28,16 +28,17 @@ Item {
                 Item { width: 1; height: 20 }
                 Row {
                     spacing: 8
-                    Button { id: shuffle; text: "Shuffle"; height: 36; width: 136; enabled: !!root.artist.shuffleId; palette.buttonText: Theme.onAccent; background: Rectangle { radius: 18; color: shuffle.hovered ? Theme.accentHover : Theme.accent } onClicked: browseState.startRadio(root.artist.shuffleId, true) }
-                    Button { id: mix; text: "Mix"; height: 36; width: 136; enabled: !!root.artist.radioId; palette.buttonText: Theme.onAccent; background: Rectangle { radius: 18; color: mix.hovered ? Theme.accentHover : Theme.accent } onClicked: browseState.startRadio(root.artist.radioId, false) }
+                    Button { id: shuffle; objectName: "artistShuffle"; text: "Shuffle"; height: 36; width: 136; enabled: !!root.artist.shuffleId; palette.buttonText: Theme.onAccent; background: Rectangle { radius: 18; color: shuffle.hovered ? Theme.accentHover : Theme.accent; border.width: shuffle.visualFocus ? 2 : 0; border.color: Theme.foreground } onClicked: browseState.startRadio(root.artist.shuffleId, true) }
+                    Button { id: mix; objectName: "artistMix"; text: "Mix"; height: 36; width: 136; enabled: !!root.artist.radioId; palette.buttonText: Theme.onAccent; background: Rectangle { radius: 18; color: mix.hovered ? Theme.accentHover : Theme.accent; border.width: mix.visualFocus ? 2 : 0; border.color: Theme.foreground } onClicked: browseState.startRadio(root.artist.radioId, false) }
                     Button {
                         id: subscription
+                        objectName: "artistSubscribe"
                         text: (root.artist.subscribed ? "Subscribed" : "Subscribe") + (root.artist.subscribers ? " " + root.artist.subscribers : "")
                         height: 36; leftPadding: 16; rightPadding: 16
                         visible: !!root.artist.subscriptionId
                         enabled: !actionsState.busy && (accountState.connected || appState.fixtureMode)
                         palette.buttonText: root.artist.subscribed ? "white" : Theme.accent
-                        background: Rectangle { radius: 18; color: subscription.hovered ? Theme.surface : "transparent"; border.color: root.artist.subscribed ? Theme.muted : Theme.accent }
+                        background: Rectangle { radius: 18; color: subscription.hovered ? Theme.surface : "transparent"; border.width: subscription.visualFocus ? 2 : 1; border.color: subscription.visualFocus ? Theme.foreground : root.artist.subscribed ? Theme.muted : Theme.accent }
                         onClicked: actionsState.set("artist_subscription", root.artist.subscriptionId, !root.artist.subscribed, catalogState.parameters.id)
                     }
                 }
