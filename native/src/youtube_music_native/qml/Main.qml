@@ -34,8 +34,13 @@ ApplicationWindow {
     onClosing: appState.saveWindow(width, height)
     property bool editingText: activeFocusItem instanceof TextInput || activeFocusItem instanceof TextEdit
     property bool signingOut: false
-    property bool modalOpen: accountMenu.visible || accountDialog.visible || playlistDialogs.opened || shortcutHelp.visible || !!(pages.item && pages.item.objectName === "downloadsPane" && pages.item.blockingShortcuts)
+    property bool modalOpen: accountMenu.visible || accountDialog.visible || playlistDialogs.opened || shortcutHelp.visible || player.popupOpen || !!(pages.item && pages.item.objectName === "downloadsPane" && pages.item.blockingShortcuts)
     property bool playbackShortcuts: !editingText && !modalOpen && !mediaMenu.visible
+    function goBack() {
+        appState.setExpanded(false)
+        if (catalogState.route === "history") libraryState.select("Playlists")
+        else browseState.back()
+    }
 
     Rectangle {
         anchors.left: sidebar.right
@@ -155,6 +160,7 @@ ApplicationWindow {
         Accessible.role: Accessible.Slider
         Accessible.name: "Resize sidebar"
         Accessible.description: "Drag or use Left and Right to resize. Press Enter to collapse or expand."
+        Keys.onShortcutOverride: event => { if ((event.key === Qt.Key_Left || event.key === Qt.Key_Right) && event.modifiers === Qt.NoModifier) event.accepted = true }
         Keys.onLeftPressed: appState.resizeSidebar(sidebar.width <= 200 ? 72 : sidebar.width - 20)
         Keys.onRightPressed: appState.resizeSidebar(Math.min(sidebar.width < 200 ? 200 : sidebar.width + 20, window.width - 800))
         Keys.onReturnPressed: appState.toggleSidebar()
@@ -182,7 +188,7 @@ ApplicationWindow {
         anchors.right: parent.right
         height: 64
         property real gutter: Theme.gutter(width)
-        IconButton { x: header.gutter - 10; y: 10; iconName: "left"; tip: "Back"; onClicked: { appState.setExpanded(false); browseState.back() } }
+        IconButton { x: header.gutter - 10; y: 10; iconName: "left"; tip: "Back"; onClicked: window.goBack() }
         TextField {
             id: search
             objectName: "searchField"
@@ -381,7 +387,7 @@ ApplicationWindow {
             text: "Space — Play / pause\nShift+N / Shift+P — Next / previous\nLeft / Right — Seek 5 seconds\nShift+Left / Shift+Right — Seek 10 seconds\n+ / − — Volume\nM — Mute\nS / R — Shuffle / repeat\nF / Escape — Open / close player\n/ or Ctrl+F — Search\nAlt+Left — Back\nAlt+Up / Alt+Down — Move focused queue entry\nDelete — Remove focused queue entry"
         }
     }
-    Shortcut { sequence: "Alt+Left"; enabled: window.playbackShortcuts; onActivated: { appState.setExpanded(false); browseState.back() } }
+    Shortcut { sequence: "Alt+Left"; enabled: window.playbackShortcuts; onActivated: window.goBack() }
     Shortcut { sequence: "/"; enabled: window.playbackShortcuts; onActivated: search.forceActiveFocus() }
     Shortcut { sequence: "Ctrl+F"; enabled: !window.modalOpen; onActivated: search.forceActiveFocus() }
     Shortcut { sequence: "Space"; enabled: window.playbackShortcuts; onActivated: playerState.togglePlayback() }

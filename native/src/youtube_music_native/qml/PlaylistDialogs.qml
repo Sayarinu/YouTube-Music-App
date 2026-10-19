@@ -25,7 +25,7 @@ Item {
             ActionButton { id: save; text: "Save"; enabled: !!name.text.trim() && !actionsState.busy && (accountState.connected || appState.fixtureMode); DialogButtonBox.buttonRole: DialogButtonBox.ActionRole; onClicked: if (root.operation === "playlist_create") libraryState.create(name.text); else libraryState.rename(root.target.id, name.text) }
             onRejected: editor.close()
         }
-        onOpened: { name.forceActiveFocus(); name.selectAll() }
+        onAboutToShow: Qt.callLater(function() { name.forceActiveFocus(); name.selectAll() })
     }
     SurfaceDialog {
         id: removal

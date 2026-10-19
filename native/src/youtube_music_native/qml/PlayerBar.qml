@@ -4,6 +4,7 @@ import "Theme.js" as Theme
 
 Rectangle {
     id: root
+    readonly property bool popupOpen: volumePopup.visible
     objectName: "playerBar"
     height: 92
     radius: 12
