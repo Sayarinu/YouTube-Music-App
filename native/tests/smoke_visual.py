@@ -123,6 +123,13 @@ def main():
                 QGuiApplication.instance().exit(0 if success else 1)
 
             def check():
+                # Snapshot a completed scene; slow CI hosts can still be incubating delegates after 80 ms.
+                incubation = engine.incubationController()
+                deadline = time.monotonic() + 2
+                while incubation and incubation.incubatingObjectCount() and time.monotonic() < deadline:
+                    incubation.incubateFor(5)
+                    QTest.qWait(10)
+                assert not incubation or not incubation.incubatingObjectCount(), "View did not finish creating its visible delegates"
                 assert not engine.property("qmlWarnings"), engine.property("qmlWarnings")
                 image = window.grabWindow()
                 assert not image.isNull()
