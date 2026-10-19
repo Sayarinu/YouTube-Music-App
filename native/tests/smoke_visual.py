@@ -131,6 +131,11 @@ def main():
                     QTest.qWait(10)
                 assert not incubation or not incubation.incubatingObjectCount(), "View did not finish creating its visible delegates"
                 assert not engine.property("qmlWarnings"), engine.property("qmlWarnings")
+                player_bar = window.findChild(QObject, "playerBar")
+                content = window.findChild(QObject, "pageContent")
+                assert player_bar.x() == 12 and player_bar.width() == window.width() - 24
+                assert player_bar.height() == 92 and player_bar.y() + 104 == window.height()
+                assert content.y() + content.height() + 12 == player_bar.y()
                 image = window.grabWindow()
                 assert not image.isNull()
                 scale = image.width() / window.width()
@@ -142,6 +147,12 @@ def main():
                             px, py = round((point.x() + item.width() * fraction) * scale), round((point.y() + item.height() / 2) * scale)
                             if 0 <= px < image.width() and 0 <= py < image.height():
                                 pixel = image.pixelColor(px, py)
+                                # Image.Ready can precede the first GPU mask/effect frame.
+                                deadline = time.monotonic() + 2
+                                while pixel.red() + pixel.blue() <= 240 and time.monotonic() < deadline:
+                                    QTest.qWait(30)
+                                    image = window.grabWindow()
+                                    pixel = image.pixelColor(px, py)
                                 assert pixel.red() + pixel.blue() > 240, (item.width(), fraction, pixel.name())
                     if args.native_gpu and item.property("mediaKey") is not None and item.property("ready") and item.width() > 80 and abs(item.property("radius") - item.width() / 2) < 1 and fully_visible(item):
                         position = item.mapToScene(item.boundingRect().topLeft())
@@ -183,12 +194,26 @@ def main():
                 try:
                     if args.native_gpu and QGuiApplication.platformName() != "offscreen":
                         assert not window.isActive(), "The verification window must not take focus"
-                    for size in ((1280, 820), (920, 620)):
+                    rail = window.findChild(QObject, "navigationRail")
+                    shell.toggleSidebar()
+                    for width, expected in ((1280, 240), (920, 72), (1280, 240)):
+                        window.resize(width, 820)
+                        QTest.qWait(30)
+                        assert rail.width() == expected
+                    assert shell.sidebarExpanded
+                    shell.toggleSidebar()
+                    for size in ((1600, 900), (1280, 820), (920, 620)):
                         window.resize(*size)
                         for name, action in scenarios:
                             action()
                             QTest.qWait(80)
                             image = check()
+                            if name in {"album", "playlist"}:
+                                collection = window.findChild(QObject, "collectionPane")
+                                rows = [item for item in visual_items(window.contentItem()) if item.property("tableLayout")]
+                                assert rows
+                                assert all(row.x() == collection.property("margin") for row in rows)
+                                assert all(row.property("showAlbum") == (name == "playlist" and not collection.property("compact")) for row in rows)
                             if name == "artist":
                                 hero = window.findChild(QObject, "artistHero")
                                 assert hero.isVisible()
@@ -228,6 +253,9 @@ def main():
                     else:
                         finish(True)
                 except Exception:
+                    if args.output_dir:
+                        args.output_dir.mkdir(parents=True, exist_ok=True)
+                        window.grabWindow().save(str(args.output_dir / "failed-view.png"))
                     traceback.print_exc()
                     finish(False)
 
@@ -258,7 +286,7 @@ def main():
         result = app.main(["--fixture", "--data-dir", str(root)])
         app.load_window = original
         assert result == 0 and passed
-    print("All views at both sizes, accessible controls and a 10,000-song list passed.")
+    print("All views at three sizes, accessible controls and a 10,000-song list passed.")
 
 
 if __name__ == "__main__":
