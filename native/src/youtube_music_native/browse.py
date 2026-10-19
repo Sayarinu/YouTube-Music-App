@@ -3,6 +3,7 @@
 from PySide6.QtCore import QObject, Property, QTimer, Signal, Slot
 
 from .playlist_ops import apply_change
+from .queue_additions import QueueAdditions
 
 
 class Browse(QObject):
@@ -20,6 +21,8 @@ class Browse(QObject):
         self._history, self._play_shuffle = [], False
         self.downloads, self._download_request = downloads, None
         self._download_open_request = None
+        self.additions = QueueAdditions(account, player, cache_path, downloads, fixture, self)
+        self.additions.changed.connect(self.changed)
         if downloads:
             downloads.collectionFound.connect(self._download_result)
             downloads.collectionReady.connect(self.openDownloaded)
@@ -39,6 +42,18 @@ class Browse(QObject):
     @Property(str, notify=changed)
     def message(self):
         return self._message
+
+    @Property(bool, notify=changed)
+    def queueBusy(self):
+        return bool(self.additions.jobs)
+
+    @Property(str, notify=changed)
+    def queueMessage(self):
+        return "Adding to queue…" if self.queueBusy and not self.additions.message else self.additions.message
+
+    @Slot("QVariantMap", bool)
+    def enqueue(self, media, next=False):
+        self.additions.add(media, next)
 
     def _cancel_play_pages(self):
         if self.downloads:
@@ -224,7 +239,7 @@ class Browse(QObject):
             self._play_request = None
             tracks = [track for track in result.get("items", []) if track.get("kind") == "song"]
             if self._play_offset:
-                self.player.enqueue(tracks)
+                self.player.appendContext(tracks)
             elif tracks:
                 self.player.playShuffledTracks(tracks) if self._play_shuffle else self.player.playTracks(tracks)
             if result.get("cursor") is not None:

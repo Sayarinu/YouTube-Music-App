@@ -14,6 +14,7 @@ class Worker(QObject):
     def __init__(self):
         super().__init__()
         self.requests = []
+        self.cancelled = []
 
     def request(self, operation, payload):
         self.requests.append((operation, payload))
@@ -21,6 +22,9 @@ class Worker(QObject):
 
     def cancelQueued(self, identifier):
         pass
+
+    def cancel(self, identifier):
+        self.cancelled.append(identifier)
 
 
 class Account(QObject):
@@ -44,7 +48,7 @@ def setup(tmp_path):
     account = Account(worker)
     view = CatalogView(worker, tmp_path / "metadata.sqlite3", account)
     played, queued, resets = [], [], []
-    player = SimpleNamespace(play=played.append, playTracks=lambda values, index=0: played.append(values), enqueue=queued.append, resetSession=lambda: resets.append(True))
+    player = SimpleNamespace(play=played.append, playTracks=lambda values, index=0: played.append(values), enqueue=lambda tracks, next=False: queued.append(tracks), appendContext=queued.append, resetSession=lambda: resets.append(True), manualQueueCleared=account.sessionChanged)
     browse = Browse(shell, account, view, player, tmp_path / "metadata.sqlite3")
     return app, browse, worker, account, view, played, queued, resets
 
