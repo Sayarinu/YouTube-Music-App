@@ -19,10 +19,12 @@ def main():
             [sys.executable, "-m", "youtube_music_native.app", "--fixture", "--smoke-test", "--data-dir", str(root)],
             check=True, timeout=30,
         )
+        subprocess.run([sys.executable, str(Path(__file__).with_name("smoke_docks.py"))], check=True, timeout=30)
         subprocess.run([sys.executable, str(Path(__file__).with_name("smoke_library.py"))], check=True, timeout=30)
         subprocess.run([sys.executable, str(Path(__file__).with_name("smoke_player.py"))], check=True, timeout=30)
         subprocess.run([sys.executable, str(Path(__file__).with_name("smoke_downloads.py"))], check=True, timeout=30)
-        subprocess.run([sys.executable, str(Path(__file__).with_name("smoke_visual.py"))], check=True, timeout=30)
+        # The visual matrix renders twelve themes and three window sizes on CI.
+        subprocess.run([sys.executable, str(Path(__file__).with_name("smoke_visual.py"))], check=True, timeout=90)
         subprocess.run([sys.executable, str(Path(__file__).with_name("smoke_priority_queue.py"))], check=True, timeout=40)
         audio = root / "fixture.wav"
         with wave.open(str(audio), "wb") as handle:
