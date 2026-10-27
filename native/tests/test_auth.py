@@ -62,3 +62,22 @@ def test_expired_replacement_cannot_overwrite_existing_session(tmp_path):
         service.import_session(path)
     assert "private-cookie" not in json.dumps(safe_error(error.value))
     assert credentials.load().session.headers["cookie"] == previous
+
+
+def test_google_sign_in_is_validated_before_replacing_the_saved_session():
+    credentials = Credentials(MemoryVault())
+    service = AuthService(credentials, lambda session: Catalog())
+    payload = {"cookies": [{"name": "__Secure-3PAPISID", "value": "private-first", "domain": ".youtube.com", "path": "/"}], "user_agent": "Chrome"}
+    result = service.import_cookies(payload)
+    assert result["connected"] and result["captured"] > 0
+    assert "private-first" not in json.dumps(result)
+
+    def rejected(session):
+        raise RuntimeError("HTTP 401 private-second")
+
+    service.catalog_factory = rejected
+    payload["cookies"][0]["value"] = "private-second"
+    with pytest.raises(RuntimeError):
+        service.import_cookies(payload)
+    assert "private-first" in credentials.load().session.headers["cookie"]
+    assert AuthService(credentials).restore()["captured"] == result["captured"]

@@ -119,3 +119,104 @@ def test_cancelling_an_active_job_preserves_later_queued_work():
     loop.exec()
     worker.close()
     assert results == [second, 3] and not failures
+
+
+class FakeSignIn(QObject):
+    def __init__(self):
+        super().__init__()
+        self.launches, self.killed = [], 0
+
+    def __call__(self, owner, mode, profile, done):
+        self.launches.append((mode, profile, done))
+        return self
+
+    def kill(self):
+        self.killed += 1
+
+    def waitForFinished(self, timeout):
+        return True
+
+
+def signed_in_account(tmp_path, monkeypatch, clock):
+    from youtube_music_native import signin
+
+    monkeypatch.setattr(signin, "available", lambda: True)
+    app = QCoreApplication.instance() or QCoreApplication([])
+    worker, launcher = FakeWorker(), FakeSignIn()
+    account = Account(tmp_path / "settings.ini", worker=worker, signin_profile=tmp_path / "signin", launcher=launcher, clock=lambda: clock[0])
+    app.processEvents()
+    return account, worker, launcher
+
+
+def test_google_sign_in_hands_cookies_to_the_worker_and_cancel_is_quiet(tmp_path, monkeypatch):
+    clock = [1000.]
+    account, worker, launcher = signed_in_account(tmp_path, monkeypatch, clock)
+    worker.succeeded.emit(1, {"connected": False, "profile": {}})
+    account.signIn()
+    assert account.signingIn and launcher.launches[-1][0] == "interactive"
+    launcher.launches[-1][2](4, b"")
+    assert not account.signingIn and account.message == "" and len(worker.requests) == 1
+    account.signIn()
+    launcher.launches[-1][2](1, b"")
+    assert "didn’t finish" in account.message
+    account.signIn()
+    launcher.launches[-1][2](3, b"")
+    assert "browser session file" in account.message
+    account.signIn()
+    launcher.launches[-1][2](0, b'{"cookies": [], "user_agent": "Chrome"}\n')
+    assert worker.requests[-1] == ("import_cookies", {"cookies": [], "user_agent": "Chrome"})
+    changes = []
+    account.sessionChanged.connect(lambda: changes.append(True))
+    worker.succeeded.emit(2, {"connected": True, "profile": {"name": "Listener"}, "captured": clock[0]})
+    assert account.connected and changes == [True]
+
+
+def test_expired_session_renews_silently_before_asking_and_only_once_per_cooldown(tmp_path, monkeypatch):
+    clock = [1000.]
+    account, worker, launcher = signed_in_account(tmp_path, monkeypatch, clock)
+    (tmp_path / "signin").mkdir()
+    worker.succeeded.emit(1, {"connected": True, "profile": {"name": "Listener"}, "captured": clock[0]})
+    assert launcher.launches == []
+    account.requireReconnect("Session expired")
+    assert launcher.launches[-1][0] == "silent" and account.connected and not account.reconnect
+    account.requireReconnect("Session expired")
+    assert len(launcher.launches) == 1
+    launcher.launches[-1][2](0, b'{"cookies": [], "user_agent": "Chrome"}\n')
+    worker.succeeded.emit(2, {"connected": True, "profile": {"name": "Listener"}, "captured": clock[0]})
+    assert account.connected and not account.reconnect
+    account.requireReconnect("Session expired")
+    assert len(launcher.launches) == 1 and account.reconnect and account.message == "Session expired"
+    clock[0] += 3600
+    account.signIn()
+    launcher.launches[-1][2](0, b'{"cookies": []}')
+    worker.failed.emit(3, {"code": "reconnect", "message": "Reconnect YouTube Music."})
+    assert account.reconnect and account.message == "Reconnect YouTube Music."
+
+
+def test_failed_silent_renewal_raises_the_banner_and_stale_restore_refreshes_quietly(tmp_path, monkeypatch):
+    clock = [10 * 24 * 3600.]
+    account, worker, launcher = signed_in_account(tmp_path, monkeypatch, clock)
+    (tmp_path / "signin").mkdir()
+    worker.succeeded.emit(1, {"connected": True, "profile": {"name": "Listener"}, "captured": 1.})
+    assert launcher.launches[-1][0] == "silent"
+    launcher.launches[-1][2](2, b"")
+    assert account.connected and not account.reconnect
+    clock[0] += 3600
+    account.requireReconnect("Session expired")
+    launcher.launches[-1][2](0, b'{"cookies": []}')
+    worker.failed.emit(2, {"code": "reconnect", "message": "private provider detail"})
+    assert account.reconnect and account.message == "Session expired"
+
+
+def test_sign_out_stops_sign_in_and_forgets_the_google_profile(tmp_path, monkeypatch):
+    account, worker, launcher = signed_in_account(tmp_path, monkeypatch, [1000.])
+    worker.succeeded.emit(1, {"connected": True, "profile": {"name": "Listener"}})
+    (tmp_path / "signin").mkdir()
+    (tmp_path / "signin" / "Cookies").write_text("private")
+    account.signIn()
+    account.signOut()
+    assert launcher.killed == 1 and not account.signingIn
+    assert not (tmp_path / "signin").exists()
+    assert worker.requests[-1] == ("sign_out", None)
+    launcher.launches[-1][2](0, b'{"cookies": []}')
+    assert worker.requests[-1] == ("sign_out", None)
