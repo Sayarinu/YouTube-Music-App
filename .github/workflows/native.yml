@@ -150,9 +150,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    concurrency:
-      group: publish-main-release
-      cancel-in-progress: false
     steps:
       - uses: actions/download-artifact@v4
         with:
