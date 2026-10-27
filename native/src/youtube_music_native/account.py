@@ -94,13 +94,6 @@ class Account(QObject):
     def signingIn(self):
         return self._mode in {"interactive", "waiting"}
 
-    @Property(str, notify=changed)
-    def browserName(self):
-        return browsers.NAMES.get(self._browser() or "", "")
-
-    def _browser(self):
-        return self.settings.value("signInBrowser", "") or self._default_browser
-
     @Property(bool, constant=True)
     def tauriAvailable(self):
         return sys.platform == "linux" and self._tauri_path().is_file()
@@ -150,7 +143,7 @@ class Account(QObject):
     def _wait_for_browser(self):
         self._mode = "waiting"
         self._wait_started = self._clock()
-        self._message = f"Sign in to YouTube Music in {self.browserName or 'your browser'}. Tubify connects as soon as you’re signed in."
+        self._message = "Sign in to YouTube Music in your browser. Tubify connects as soon as you’re signed in."
         self._open_url(QUrl(MUSIC_URL))
         self._poll.start()
         self.changed.emit()
@@ -253,7 +246,8 @@ class Account(QObject):
             self._browser_failed(error.get("code"), message)
             return
         self._message = message
-        if self._operation == "restore":
+        if self._operation == "restore" and not self.renew(message):
+            # An unreadable saved session is replaced from the browser before asking the user.
             self._reconnect = True
         self.changed.emit()
         self.connectedChanged.emit()

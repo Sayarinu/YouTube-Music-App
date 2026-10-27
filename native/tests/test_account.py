@@ -134,7 +134,6 @@ def test_browser_sign_in_connects_from_the_default_browser_first(tmp_path):
     clock = [1000.]
     account, worker, opened = browser_account(tmp_path, clock)
     worker.succeeded.emit(1, {"connected": False, "profile": {}})
-    assert account.browserName == "Firefox"
     account.signIn()
     assert account.signingIn and worker.requests[-1][0] == "import_browser"
     assert worker.requests[-1][1]["browsers"][:2] == ["firefox", "chrome"]
@@ -152,11 +151,11 @@ def test_unsigned_browser_is_opened_and_watched_until_sign_in_or_timeout(tmp_pat
     account.signIn()
     worker.failed.emit(2, {"code": "NoBrowserSession", "message": "Sign in to YouTube Music in your browser to connect."})
     assert [url.toString() for url in opened] == ["https://music.youtube.com/"]
-    assert account.signingIn and "Chrome" in account.message
+    assert account.signingIn and "your browser" in account.message
     account._check_browser()
     assert worker.requests[-1] == ("import_browser", {"browsers": ["chrome"]})
     worker.failed.emit(3, {"code": "NoBrowserSession", "message": "not yet"})
-    assert account.signingIn and "Chrome" in account.message
+    assert account.signingIn and "your browser" in account.message
     account._check_browser()
     worker.succeeded.emit(4, {"connected": True, "profile": {"name": "Listener"}, "browser": "chrome"})
     assert account.connected and not account.signingIn
@@ -198,4 +197,13 @@ def test_expired_session_is_renewed_from_the_browser_before_asking(tmp_path):
     account.requireReconnect("Session expired")
     assert worker.requests[-1][0] == "import_browser" and not account.reconnect
     worker.succeeded.emit(3, {"connected": True, "profile": {"name": "Listener"}, "browser": "firefox"})
+    assert account.connected and not account.reconnect
+
+
+def test_unreadable_saved_session_is_replaced_from_the_browser_without_a_banner(tmp_path):
+    account, worker, opened = browser_account(tmp_path, [1000.])
+    account.settings.setValue("signInBrowser", "firefox")
+    worker.failed.emit(1, {"code": "CredentialError", "message": "The saved session could not be read."})
+    assert worker.requests[-1] == ("import_browser", {"browsers": ["firefox"]}) and not account.reconnect
+    worker.succeeded.emit(2, {"connected": True, "profile": {"name": "Listener"}, "browser": "firefox"})
     assert account.connected and not account.reconnect

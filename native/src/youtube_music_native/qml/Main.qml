@@ -575,7 +575,7 @@ ApplicationWindow {
             Button {
                 objectName: "browserSignIn"
                 Layout.fillWidth: true; Layout.preferredHeight: 44
-                text: accountState.signingIn ? "Waiting for " + (accountState.browserName || "Your Browser") + "…" : accountState.browserName ? "Continue with " + accountState.browserName : "Sign in with Your Browser"
+                text: accountState.signingIn ? "Waiting for Browser Sign-In…" : "Sign in via Browser"
                 visible: accountState.signInAvailable && !accountState.connected; enabled: !accountState.busy && !accountState.signingIn
                 contentItem: Text { text: parent.text; color: themeState.onAccent; font.pixelSize: 14; font.bold: true; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                 background: Rectangle { radius: 20; color: parent.down ? themeState.accent : parent.hovered ? themeState.accentHover : themeState.accent; border.width: parent.visualFocus ? 2 : 0; border.color: themeState.foreground }
