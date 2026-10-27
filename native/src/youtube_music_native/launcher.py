@@ -12,7 +12,7 @@ if __name__ == "__main__" and not __package__:
     __package__ = "youtube_music_native"
 
 
-FLAGS = {"provider": "--provider-worker", "player": "--player-worker", "signin": "--sign-in-worker"}
+FLAGS = {"provider": "--provider-worker", "player": "--player-worker"}
 
 
 def application_command():
@@ -29,10 +29,6 @@ def main(argv=None):
     from .macos import prepare_runtime
 
     prepare_runtime()
-    if args[:1] == [FLAGS["signin"]]:
-        from .signin import main as signin_main
-
-        return signin_main(args[1:])
     if args == ["--streamdeck-credentials"]:
         from .streamdeck_credentials import main as credential_main
 

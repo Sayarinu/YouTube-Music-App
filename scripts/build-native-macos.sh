@@ -55,16 +55,6 @@ TUBIFY_ICON="$native_build_root/Tubify.icns" "$native_python" -m PyInstaller --n
 
 app="$native_build_root/dist/Tubify.app"
 [[ "$(lipo -archs "$app/Contents/MacOS/Tubify")" == "arm64" ]] || { printf '%s\n' 'Tubify executable is not arm64.' >&2; exit 1; }
-# PyPI Qt frameworks are not well-formed, and QtWebEngine leaves a stray Versions/Resources directory
-# after it first runs; move anything PyInstaller placed there into the real version so codesign accepts it.
-webengine="$app/Contents/Frameworks/PySide6/Qt/lib/QtWebEngineCore.framework"
-if [[ -d "$webengine/Versions/Resources" ]]; then
-  for part in Resources Helpers; do
-    [[ -d "$webengine/Versions/Resources/$part" ]] && ditto "$webengine/Versions/Resources/$part" "$webengine/Versions/A/$part"
-  done
-  rm -rf "$webengine/Versions/Resources"
-fi
-[[ -x "$webengine/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess" ]] || { printf '%s\n' 'QtWebEngineProcess was not bundled.' >&2; exit 1; }
 # python-mpv looks up libmpv.dylib; PyInstaller only ships the versioned install name.
 ln -sf libmpv.2.dylib "$app/Contents/Frameworks/libmpv.dylib"
 # Local builds are ad-hoc signed; Gatekeeper accepts them on the machine that built them.

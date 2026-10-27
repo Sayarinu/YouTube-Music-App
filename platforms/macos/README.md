@@ -23,4 +23,4 @@ Notes:
 scripts/build-native-macos.sh
 ```
 
-Outputs `dist/native/Tubify-macos-arm64.app` and `dist/native/Tubify-<version>-macos-arm64.dmg`. Needs an arm64 Mac with Homebrew and uv; the script installs `mpv`, `ffmpeg` and `deno` and bundles them, so the app runs without Homebrew on `PATH`. Builds are ad-hoc signed for local use, not notarized. The bundle registers the `ytmusic-native://` scheme, publishes to Now Playing and accepts the media keys. "Sign in with Google" opens Google's own sign-in page.
+Outputs `dist/native/Tubify-macos-arm64.app` and `dist/native/Tubify-<version>-macos-arm64.dmg`. Needs an arm64 Mac with Homebrew and uv; the script installs `mpv`, `ffmpeg` and `deno` and bundles them, so the app runs without Homebrew on `PATH`. Builds are ad-hoc signed for local use, not notarized. The bundle registers the `ytmusic-native://` scheme, publishes to Now Playing and accepts the media keys. Signing in reuses the YouTube Music sign-in from your default browser (opening it if needed); Chrome-based browsers ask once for Keychain access, and Safari needs Full Disk Access.

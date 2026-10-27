@@ -3,7 +3,8 @@
 from functools import partial
 
 from .credentials import Credentials
-from .session import from_cookies, read_browser_session, read_tauri_session
+from .browsers import read_session
+from .session import read_browser_session, read_tauri_session
 
 
 class AuthError(RuntimeError):
@@ -64,8 +65,9 @@ class AuthService:
     def import_session(self, path, tauri=False):
         return self._adopt(read_tauri_session(path) if tauri else read_browser_session(path))
 
-    def import_cookies(self, payload):
-        return self._adopt(from_cookies(payload.get("cookies"), payload.get("user_agent")))
+    def import_browser(self, names):
+        browser, session = read_session(names)
+        return {**self._adopt(session), "browser": browser}
 
     def _adopt(self, session):
         # Validate before saving so a failed sign-in never replaces a working session.

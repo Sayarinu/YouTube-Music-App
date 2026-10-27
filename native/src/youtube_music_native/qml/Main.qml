@@ -573,13 +573,20 @@ ApplicationWindow {
             Label { Layout.fillWidth: true; text: "Current User:"; horizontalAlignment: Text.AlignHCenter; color: themeState.secondary; font.pixelSize: 13 }
             Label { Layout.fillWidth: true; text: accountState.profile.name || "Not Signed In"; horizontalAlignment: Text.AlignHCenter; color: themeState.foreground; font.pixelSize: 21; font.bold: true; elide: Text.ElideRight }
             Button {
-                objectName: "googleSignIn"
+                objectName: "browserSignIn"
                 Layout.fillWidth: true; Layout.preferredHeight: 44
-                text: accountState.signingIn ? "Waiting for Google…" : "Sign in with Google"
+                text: accountState.signingIn ? "Waiting for " + (accountState.browserName || "Your Browser") + "…" : accountState.browserName ? "Continue with " + accountState.browserName : "Sign in with Your Browser"
                 visible: accountState.signInAvailable && !accountState.connected; enabled: !accountState.busy && !accountState.signingIn
                 contentItem: Text { text: parent.text; color: themeState.onAccent; font.pixelSize: 14; font.bold: true; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                 background: Rectangle { radius: 20; color: parent.down ? themeState.accent : parent.hovered ? themeState.accentHover : themeState.accent; border.width: parent.visualFocus ? 2 : 0; border.color: themeState.foreground }
                 onClicked: accountState.signIn()
+            }
+            Button {
+                Layout.alignment: Qt.AlignHCenter
+                text: "Cancel"; visible: accountState.signingIn && !accountState.connected
+                contentItem: Text { text: parent.text; color: themeState.secondary; font.pixelSize: 13; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                background: Rectangle { radius: 15; color: parent.hovered ? themeState.hover : "transparent" }
+                onClicked: accountState.cancelSignIn()
             }
             Button {
                 Layout.fillWidth: true; Layout.preferredHeight: 44

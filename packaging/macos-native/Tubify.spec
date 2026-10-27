@@ -32,10 +32,11 @@ analysis = Analysis(
     datas=collect_data_files("youtube_music_native") + collect_data_files("ytmusicapi"),
     # Worker roles and platform integrations are imported lazily by the launcher.
     hiddenimports=collect_submodules("youtube_music_native") + [
-        "PySide6.QtWebEngineCore", "PySide6.QtWebEngineWidgets", "PySide6.QtNetwork",
+        "PySide6.QtNetwork",
         "MediaPlayer", "AppKit", "Foundation", "keyring.backends.macOS",
     ],
-    excludes=["tkinter", "jeepney", "gi"],
+    # Sign-in happens in the user's own browser, so Chromium (QtWebEngine) is never needed.
+    excludes=["tkinter", "jeepney", "gi", "PySide6.QtWebEngineCore", "PySide6.QtWebEngineWidgets", "PySide6.QtWebEngineQuick"],
 )
 pyz = PYZ(analysis.pure)
 exe = EXE(

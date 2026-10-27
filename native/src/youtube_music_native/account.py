@@ -2,40 +2,20 @@
 
 import json
 from pathlib import Path
-import shutil
 import sys
 import time
 
-from PySide6.QtCore import QObject, Property, QProcess, QSettings, QStandardPaths, QTimer, QUrl, Signal, Slot
+from PySide6.QtCore import QCoreApplication, QObject, Property, QSettings, QStandardPaths, QTimer, QUrl, Signal, Slot
+from PySide6.QtGui import QDesktopServices
 
-from . import signin
+from . import browsers
 from .jobs import Worker
-from .launcher import process_command
 
+MUSIC_URL = "https://music.youtube.com/"
 RENEW_AFTER = 7 * 24 * 3600
 RENEW_COOLDOWN = 10 * 60
-
-
-def launch_sign_in(owner, mode, profile, done):
-    """Run the Google sign-in process; done(exit_code, stdout) fires once."""
-    process = QProcess(owner)
-    command = process_command("signin")
-    process.setProgram(command[0])
-    process.setArguments([*command[1:], mode, str(profile)])
-    process.setProcessChannelMode(QProcess.ProcessChannelMode.SeparateChannels)
-    process.readyReadStandardError.connect(lambda: process.readAllStandardError())
-    output = bytearray()
-    process.readyReadStandardOutput.connect(lambda: output.extend(bytes(process.readAllStandardOutput())))
-
-    def finished(code, status):
-        output.extend(bytes(process.readAllStandardOutput()))
-        process.deleteLater()
-        done(code if status == QProcess.ExitStatus.NormalExit else signin.FAILED, bytes(output))
-
-    process.finished.connect(finished)
-    process.errorOccurred.connect(lambda error: error == QProcess.ProcessError.FailedToStart and finished(signin.FAILED, QProcess.ExitStatus.CrashExit))
-    process.start()
-    return process
+POLL_MS = 4000
+WAIT_LIMIT = 5 * 60
 
 
 class Account(QObject):
@@ -43,16 +23,18 @@ class Account(QObject):
     connectedChanged = Signal()
     sessionChanged = Signal()
 
-    def __init__(self, settings_path, fixture=False, worker=None, parent=None, signin_profile=None, launcher=launch_sign_in, clock=time.time):
+    def __init__(self, settings_path, fixture=False, worker=None, parent=None, clock=time.time,
+                 open_url=QDesktopServices.openUrl, default_browser=browsers.default_browser):
         super().__init__(parent)
-        self._signin_profile = Path(signin_profile) if signin_profile else Path(settings_path).parent / "signin-profile"
-        self._launcher, self._clock = launcher, clock
-        self._signin = None
-        self._signin_mode = ""
+        self._clock, self._open_url = clock, open_url
+        # "", "interactive" (first try), "waiting" (browser opened, watching for sign-in) or "silent" (renewal).
+        self._mode = ""
         self._renew_message = ""
         self._last_renewal = None
-        self._pending = None
-        self._operation_mode = ""
+        self._wait_started = 0.
+        self._poll = QTimer(self)
+        self._poll.setInterval(POLL_MS)
+        self._poll.timeout.connect(self._check_browser)
         self.settings = QSettings(str(settings_path), QSettings.Format.IniFormat)
         self._fixture = fixture
         self.worker = None if fixture else (worker if worker is not None else Worker(self))
@@ -62,6 +44,7 @@ class Account(QObject):
         self._connected = False
         self._reconnect = False
         self._message = ""
+        self._default_browser = None if fixture else default_browser()
         try:
             self._profile = json.loads(self.settings.value("accountProfile", "{}"))
             if not isinstance(self._profile, dict):
@@ -74,6 +57,10 @@ class Account(QObject):
             self.worker.succeeded.connect(self._succeeded)
             self.worker.failed.connect(self._failed)
             QTimer.singleShot(0, self.restore)
+            application = QCoreApplication.instance()
+            if hasattr(application, "applicationStateChanged"):
+                # Returning from the browser is the natural moment to look for the new sign-in.
+                application.applicationStateChanged.connect(self._activated)
 
     @Property(bool, notify=changed)
     def busy(self):
@@ -101,11 +88,18 @@ class Account(QObject):
 
     @Property(bool, constant=True)
     def signInAvailable(self):
-        return not self._fixture and signin.available()
+        return not self._fixture
 
     @Property(bool, notify=changed)
     def signingIn(self):
-        return self._signin_mode == "interactive"
+        return self._mode in {"interactive", "waiting"}
+
+    @Property(str, notify=changed)
+    def browserName(self):
+        return browsers.NAMES.get(self._browser() or "", "")
+
+    def _browser(self):
+        return self.settings.value("signInBrowser", "") or self._default_browser
 
     @Property(bool, constant=True)
     def tauriAvailable(self):
@@ -114,18 +108,16 @@ class Account(QObject):
     def _tauri_path(self):
         return Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)) / "com.carter.youtube-music" / "cookies"
 
-    def _send(self, operation, payload=None):
-        if self.worker is None:
-            return
-        if self._busy:
-            if operation == "import_cookies":
-                self._pending = (operation, payload)
-            return
+    def _send(self, operation, payload=None, keep_message=False):
+        if self.worker is None or self._busy:
+            return False
         self._operation = operation
         self._busy = True
-        self._message = ""
+        if not keep_message:
+            self._message = ""
         self._request = self.worker.request(operation, payload)
         self.changed.emit()
+        return True
 
     @Slot()
     def restore(self):
@@ -142,53 +134,61 @@ class Account(QObject):
 
     @Slot()
     def signIn(self):
-        if self.signInAvailable and self._signin_mode != "interactive":
-            self._stop_sign_in()
-            self._start_sign_in("interactive")
+        """Connect with the browser's own YouTube Music sign-in, opening the browser if it has none yet."""
+        if self._fixture or self.signingIn:
+            return
+        names = browsers.candidates(self.settings.value("signInBrowser", ""), self._default_browser)
+        if self._send("import_browser", {"browsers": names}):
+            self._mode = "interactive"
+            self.changed.emit()
+
+    @Slot()
+    def cancelSignIn(self):
+        if self._mode == "waiting":
+            self._stop_waiting("")
+
+    def _wait_for_browser(self):
+        self._mode = "waiting"
+        self._wait_started = self._clock()
+        self._message = f"Sign in to YouTube Music in {self.browserName or 'your browser'}. Tubify connects as soon as you’re signed in."
+        self._open_url(QUrl(MUSIC_URL))
+        self._poll.start()
+        self.changed.emit()
+
+    def _stop_waiting(self, message):
+        self._poll.stop()
+        self._mode = ""
+        self._message = message
+        self.changed.emit()
+
+    def _activated(self, state):
+        from PySide6.QtCore import Qt
+
+        if state == Qt.ApplicationState.ApplicationActive and self._mode == "waiting":
+            self._check_browser()
+
+    def _check_browser(self):
+        if self._mode != "waiting" or self._busy:
+            return
+        if self._clock() - self._wait_started > WAIT_LIMIT:
+            self._stop_waiting("No YouTube Music sign-in was found in your browser. Sign in there, then try again.")
+            return
+        # Only the opened browser is watched, so other browsers' keychain prompts never repeat.
+        names = browsers.candidates(None, self._default_browser)[:1]
+        self._send("import_browser", {"browsers": names}, keep_message=True)
 
     def renew(self, message=""):
-        """Reuse the sign-in profile's Google session without showing a window; False if not attempted."""
+        """Re-read the remembered browser's current cookies; False if no renewal was attempted."""
         now = self._clock()
-        if (self._signin is not None or not self.signInAvailable or not self._signin_profile.is_dir()
+        browser = self.settings.value("signInBrowser", "")
+        if (self._fixture or self._mode or not browser or self._busy
                 or self._last_renewal is not None and now - self._last_renewal < RENEW_COOLDOWN):
             return False
         self._last_renewal = now
         self._renew_message = message
-        self._start_sign_in("silent")
+        self._mode = "silent"
+        self._send("import_browser", {"browsers": [browser]}, keep_message=True)
         return True
-
-    def _start_sign_in(self, mode):
-        self._signin_profile.mkdir(parents=True, exist_ok=True, mode=0o700)
-        self._signin_mode = mode
-        self._message = "Finish signing in with Google in the sign-in window." if mode == "interactive" else self._message
-        self._signin = self._launcher(self, mode, self._signin_profile, lambda code, output: self._signed_in(mode, code, output))
-        self.changed.emit()
-
-    def _stop_sign_in(self):
-        process, self._signin, self._signin_mode = self._signin, None, ""
-        if process is not None:
-            process.blockSignals(True)
-            process.kill()
-            process.waitForFinished(2000)
-
-    def _signed_in(self, mode, code, output):
-        if self._signin_mode != mode:
-            return
-        self._signin, self._signin_mode = None, ""
-        payload = None
-        if code == signin.SUCCESS:
-            try:
-                payload = json.loads(output.decode("utf-8").strip().splitlines()[-1])
-            except (UnicodeDecodeError, ValueError, IndexError):
-                payload = None
-        if isinstance(payload, dict):
-            self._operation_mode = mode
-            self._send("import_cookies", payload)
-        elif mode == "silent":
-            self._renewal_failed()
-        else:
-            self._message = {signin.CANCELLED: "", signin.UNAVAILABLE: "Google sign-in needs Qt WebEngine on this system. Choose a browser session file instead."}.get(code, "Google sign-in didn’t finish. Try again.")
-            self.changed.emit()
 
     def _renewal_failed(self):
         message, self._renew_message = self._renew_message, ""
@@ -200,14 +200,15 @@ class Account(QObject):
 
     @Slot()
     def signOut(self):
-        self._stop_sign_in()
-        # Forget Google's sign-in too, so silent renewal cannot reconnect a signed-out account.
-        shutil.rmtree(self._signin_profile, ignore_errors=True)
+        self._poll.stop()
+        self._mode = ""
+        # Forget the browser too, so renewal cannot reconnect a signed-out account.
+        self.settings.remove("signInBrowser")
         self._send("sign_out")
 
     @Slot(str)
     def requireReconnect(self, message):
-        if self._signin_mode == "silent":
+        if self._mode == "silent":
             return
         if not self.renew(message):
             self._set_reconnect(message)
@@ -228,41 +229,53 @@ class Account(QObject):
         self._profile = result.get("profile") or {}
         self._message = "Connected to YouTube Music." if self._connected else ""
         self.settings.setValue("accountProfile", json.dumps(self._profile))
+        if self._operation == "import_browser":
+            self._poll.stop()
+            self._mode, self._renew_message = "", ""
+            self.settings.setValue("signInBrowser", result.get("browser", ""))
         self.settings.sync()
         self.changed.emit()
         self.connectedChanged.emit()
-        if self._operation in {"import_session", "import_cookies", "sign_out"}:
+        if self._operation in {"import_session", "import_browser", "sign_out"}:
             self.sessionChanged.emit()
-        if self._operation == "import_cookies":
-            self._renew_message = ""
         captured = result.get("captured") or 0
         if self._operation == "restore" and self._connected and captured and self._clock() - captured > RENEW_AFTER:
             # Refresh rotating Google cookies before they lapse; failure leaves the current session alone.
             self.renew()
-        self._dispatch_pending()
 
     def _failed(self, identifier, error):
         if identifier != self._request:
             return
         self._request = None
         self._busy = False
-        self._message = error.get("message", "Reconnect YouTube Music.")
+        message = error.get("message", "Reconnect YouTube Music.")
+        if self._operation == "import_browser":
+            self._browser_failed(error.get("code"), message)
+            return
+        self._message = message
         if self._operation == "restore":
             self._reconnect = True
-        if self._operation == "import_cookies" and self._operation_mode == "silent":
-            self._message = ""
-            self._renewal_failed()
         self.changed.emit()
         self.connectedChanged.emit()
-        self._dispatch_pending()
 
-    def _dispatch_pending(self):
-        if self._pending and not self._busy:
-            operation, payload = self._pending
-            self._pending = None
-            self._send(operation, payload)
+    def _browser_failed(self, code, message):
+        mode = self._mode
+        if mode == "silent":
+            self._mode = ""
+            self._renewal_failed()
+        elif mode == "interactive" and code == "NoBrowserSession":
+            self._wait_for_browser()
+        elif mode == "waiting":
+            # Keep watching; only problems other than "not signed in yet" are worth showing.
+            if code != "NoBrowserSession":
+                self._message = message
+            self.changed.emit()
+        else:
+            self._mode = ""
+            self._message = message
+            self.changed.emit()
 
     def close(self):
-        self._stop_sign_in()
+        self._poll.stop()
         if self.worker:
             self.worker.close()

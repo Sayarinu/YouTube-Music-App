@@ -6,7 +6,7 @@ from PySide6.QtCore import QCoreApplication
 
 from youtube_music_native.macos import prepare_runtime
 from youtube_music_native.macos_media import COMMANDS, MacBus
-from youtube_music_native.signin import Capture, browser_agent
+from youtube_music_native.browsers import BrowserBlocked, NoBrowserSession, candidates, read_session
 
 
 def test_runtime_paths_are_added_once_and_only_on_macos(tmp_path):
@@ -22,23 +22,32 @@ def test_runtime_paths_are_added_once_and_only_on_macos(tmp_path):
     assert libraries[:2] == [str(tmp_path), str(Path("/opt/homebrew/lib"))]
 
 
-def test_sign_in_announces_a_plain_browser_and_tracks_rotated_cookies():
-    agent = "Mozilla/5.0 (Macintosh) AppleWebKit/537.36 (KHTML, like Gecko) QtWebEngine/6.10.0 Chrome/140.0.0.0 Safari/537.36"
-    assert browser_agent(agent) == "Mozilla/5.0 (Macintosh) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+def test_browser_sign_in_prefers_the_remembered_then_default_browser_and_skips_unreadable_ones():
+    import pytest
 
-    def cookie(name, domain=".youtube.com"):
-        expiry = SimpleNamespace(isValid=lambda: False)
-        return SimpleNamespace(name=lambda: name.encode(), value=lambda: b"private", domain=lambda: domain, path=lambda: "/",
-                               isSecure=lambda: True, isSessionCookie=lambda: True, expirationDate=lambda: expiry)
+    assert candidates("chrome", "firefox")[:3] == ["chrome", "firefox", "safari"]
+    assert candidates("unknown", None)[0] == "firefox" and len(candidates()) == len(set(candidates()))
+    tried = []
 
-    capture = Capture()
-    capture.added(cookie("SAPISID"))
-    capture.added(cookie("SID", ".google.com"))
-    assert not capture.signed_in()
-    capture.added(cookie("__Secure-3PAPISID"))
-    assert capture.signed_in() and {row["name"] for row in capture.rows()} == {"SAPISID", "__Secure-3PAPISID"}
-    capture.removed(cookie("SAPISID"))
-    assert not capture.signed_in()
+    def reader(name):
+        tried.append(name)
+        if name == "firefox":
+            raise FileNotFoundError("no profile")
+        if name == "chrome":
+            return [{"name": "SID", "value": "signed-out", "domain": ".youtube.com", "path": "/"}]
+        return [{"name": cookie, "value": "private", "domain": ".youtube.com", "path": "/"} for cookie in ("SAPISID", "__Secure-3PAPISID")]
+
+    browser, session = read_session(["firefox", "chrome", "brave", "edge"], reader=reader)
+    assert browser == "brave" and tried == ["firefox", "chrome", "brave"]
+    assert "private" not in repr(session)
+
+    def blocked(name):
+        raise PermissionError("Full Disk Access")
+
+    with pytest.raises(BrowserBlocked):
+        read_session(["safari"], reader=blocked)
+    with pytest.raises(NoBrowserSession):
+        read_session(["firefox", "not-a-browser"], reader=lambda name: [])
 
 
 class Remote:

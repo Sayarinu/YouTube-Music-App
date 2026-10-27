@@ -89,8 +89,8 @@ def handle(service, request, resources=None, progress=None):
         result = service.import_session(payload["path"], tauri=bool(payload.get("tauri")))
         resources.clear()
         return result
-    if operation == "import_cookies":
-        result = service.import_cookies(payload)
+    if operation == "import_browser":
+        result = service.import_browser([name for name in payload.get("browsers", []) if isinstance(name, str)])
         resources.clear()
         return result
     if operation == "sign_out":

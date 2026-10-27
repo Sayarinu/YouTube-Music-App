@@ -100,9 +100,6 @@ jobs:
           finder_env=(env -i HOME="$HOME" TMPDIR="$RUNNER_TEMP/" PATH=/usr/bin:/bin)
           printf '{"source": "%s"}' "$RUNNER_TEMP/tone.wav" | "${finder_env[@]}" "$app" --player-worker
           "${finder_env[@]}" QT_QPA_PLATFORM=offscreen "$app" --smoke-test
-          status=0
-          "${finder_env[@]}" QT_QPA_PLATFORM=offscreen "$app" --sign-in-worker silent "$RUNNER_TEMP/signin" || status=$?
-          test "$status" -eq 2
       - uses: actions/upload-artifact@v4
         with:
           name: tubify-macos-arm64
