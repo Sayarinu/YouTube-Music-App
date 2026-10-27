@@ -1,0 +1,51 @@
+0 verbose cli /usr/bin/node /usr/bin/npm
+1 info using npm@12.0.2
+2 info using node@v26.7.0
+3 silly config load:file:/usr/lib/node_modules/npm/npmrc
+4 silly config load:file:/home/sayarin/Documents/Coding Repositories/YouTube-Music-App/packaging/arch/src/youtube-music-app-0.1.2/.npmrc
+5 silly config load:file:/home/sayarin/.npmrc
+6 silly config load:file:/etc/npmrc
+7 verbose title npm ci
+8 verbose argv "ci" "--cache" "/home/sayarin/Documents/Coding Repositories/YouTube-Music-App/packaging/arch/src/npm-cache" "--prefer-offline"
+9 verbose logfile logs-max:10 dir:/home/sayarin/Documents/Coding Repositories/YouTube-Music-App/packaging/arch/src/npm-cache/_logs/2026-08-15T19_44_14_155Z-
+10 verbose logfile /home/sayarin/Documents/Coding Repositories/YouTube-Music-App/packaging/arch/src/npm-cache/_logs/2026-08-15T19_44_14_155Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4395630592 maxSize:1098907648 maxEntrySize:549453824
+13 silly packumentCache heap:4395630592 maxSize:1098907648 maxEntrySize:549453824
+14 silly idealTree buildDeps
+15 silly reify moves {}
+16 silly audit bulk request {
+16 silly audit   '@tauri-apps/cli': [ '2.11.4' ],
+16 silly audit   '@tauri-apps/cli-darwin-arm64': [ '2.11.4' ],
+16 silly audit   '@tauri-apps/cli-darwin-x64': [ '2.11.4' ],
+16 silly audit   '@tauri-apps/cli-linux-arm-gnueabihf': [ '2.11.4' ],
+16 silly audit   '@tauri-apps/cli-linux-arm64-gnu': [ '2.11.4' ],
+16 silly audit   '@tauri-apps/cli-linux-arm64-musl': [ '2.11.4' ],
+16 silly audit   '@tauri-apps/cli-linux-riscv64-gnu': [ '2.11.4' ],
+16 silly audit   '@tauri-apps/cli-linux-x64-gnu': [ '2.11.4' ],
+16 silly audit   '@tauri-apps/cli-linux-x64-musl': [ '2.11.4' ],
+16 silly audit   '@tauri-apps/cli-win32-arm64-msvc': [ '2.11.4' ],
+16 silly audit   '@tauri-apps/cli-win32-ia32-msvc': [ '2.11.4' ],
+16 silly audit   '@tauri-apps/cli-win32-x64-msvc': [ '2.11.4' ]
+16 silly audit }
+17 http cache @tauri-apps/cli-linux-x64-musl@https://registry.npmjs.org/@tauri-apps/cli-linux-x64-musl/-/cli-linux-x64-musl-2.11.4.tgz 0ms (cache hit)
+18 http cache @tauri-apps/cli-linux-x64-gnu@https://registry.npmjs.org/@tauri-apps/cli-linux-x64-gnu/-/cli-linux-x64-gnu-2.11.4.tgz 0ms (cache hit)
+19 http cache @tauri-apps/cli@https://registry.npmjs.org/@tauri-apps/cli/-/cli-2.11.4.tgz 0ms (cache hit)
+20 silly tarball no local data for @tauri-apps/cli-linux-x64-musl@https://registry.npmjs.org/@tauri-apps/cli-linux-x64-musl/-/cli-linux-x64-musl-2.11.4.tgz. Extracting by manifest.
+21 silly tarball no local data for @tauri-apps/cli-linux-x64-gnu@https://registry.npmjs.org/@tauri-apps/cli-linux-x64-gnu/-/cli-linux-x64-gnu-2.11.4.tgz. Extracting by manifest.
+22 silly tarball no local data for @tauri-apps/cli@https://registry.npmjs.org/@tauri-apps/cli/-/cli-2.11.4.tgz. Extracting by manifest.
+23 http fetch GET 200 https://registry.npmjs.org/npm 97ms
+24 http fetch GET 200 https://registry.npmjs.org/@tauri-apps/cli/-/cli-2.11.4.tgz 111ms (cache miss)
+25 http fetch POST 200 https://registry.npmjs.org/-/npm/v1/security/advisories/bulk 120ms
+26 silly audit report {}
+27 http fetch GET 200 https://registry.npmjs.org/@tauri-apps/cli-linux-x64-musl/-/cli-linux-x64-musl-2.11.4.tgz 250ms (cache miss)
+28 http fetch GET 200 https://registry.npmjs.org/@tauri-apps/cli-linux-x64-gnu/-/cli-linux-x64-gnu-2.11.4.tgz 304ms (cache miss)
+29 silly ADD node_modules/@tauri-apps/cli-linux-x64-musl
+30 silly ADD node_modules/@tauri-apps/cli-linux-x64-gnu
+31 silly ADD node_modules/@tauri-apps/cli
+32 verbose cwd /home/sayarin/Documents/Coding Repositories/YouTube-Music-App/packaging/arch/src/youtube-music-app-0.1.2
+33 verbose os Linux 7.1.8-arch1-3
+34 verbose node v26.7.0
+35 verbose npm  v12.0.2
+36 verbose exit 0
+37 info ok
