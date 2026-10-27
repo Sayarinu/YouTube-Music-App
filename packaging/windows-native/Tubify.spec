@@ -13,7 +13,7 @@ VERSION = tomllib.loads((NATIVE / "pyproject.toml").read_text(encoding="utf-8"))
 version_tuple = tuple(int(part) for part in VERSION.split("."))
 version_tuple = (version_tuple + (0, 0, 0, 0))[:4]
 version_info = VSVersionInfo(
-    ffi=FixedFileInfo(filevers=version_tuple, prodvers=version_tuple, fileOS=0x40004, fileType=1),
+    ffi=FixedFileInfo(filevers=version_tuple, prodvers=version_tuple, OS=0x40004, fileType=1),
     kids=[StringFileInfo([StringTable("040904B0", [
         StringStruct("CompanyName", "Nouvelle Lune Atelier"),
         StringStruct("FileDescription", "Tubify"),
