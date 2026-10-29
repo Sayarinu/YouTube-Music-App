@@ -64,6 +64,7 @@ curl --fail --location --silent --show-error https://github.com/sparkle-project/
 printf '%s  %s\n' 1a856d2a9edb8e628de88121d7be04cf0e2167f8641650b78fca00b14244cf27 "$sparkle/archive.tar.xz" | shasum -a 256 --check
 tar -xf "$sparkle/archive.tar.xz" -C "$sparkle"
 ditto "$sparkle/Sparkle.framework" "$app/Contents/Frameworks/Sparkle.framework"
+cp "$sparkle/LICENSE" "$app/Contents/Resources/Sparkle-LICENSE.txt"
 # Local builds are ad-hoc signed; Gatekeeper accepts them on the machine that built them.
 codesign --force --deep --sign - "$app"
 codesign --verify --deep --strict "$app"
