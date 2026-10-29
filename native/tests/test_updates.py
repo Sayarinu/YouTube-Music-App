@@ -160,3 +160,14 @@ def test_windows_handoff_waits_for_gui_and_preserves_install_directory(tmp_path,
     assert '/UPDATEPID=321' in calls[0]
     assert '/NOCLOSEAPPLICATIONS' in calls[0]
     assert calls[0][-1] == '/DIR='+str(tmp_path/'Installed App')
+
+
+def test_update_preferences_use_shell_config_not_replaceable_cache(tmp_path):
+    from youtube_music_native.shell import ShellController
+    app = QCoreApplication.instance() or QCoreApplication([])
+    shell = ShellController(tmp_path/'config/settings.ini')
+    service = maintenance.Maintenance(tmp_path/'separate/cache/release.json', shell, worker_factory=Worker)
+    service.setAutomaticChecks(False)
+    assert service.settings is shell.settings
+    assert shell.settings.value('updates/automatic', True, type=bool) is False
+    service.close()

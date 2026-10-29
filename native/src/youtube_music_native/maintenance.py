@@ -148,7 +148,10 @@ class Maintenance(QObject):
         self.prepare_restart = lambda: None
         self._tag, self._available, self._progress = "", False, 0
         self._mac = None
-        self.settings = QSettings(str(Path(cache_path).parent.parent / "settings.ini"), QSettings.Format.IniFormat)
+        self.settings = getattr(shell, "settings", None)
+        if self.settings is None:
+            self.settings = QSettings(str(Path(cache_path).parent.parent / "settings.ini"), QSettings.Format.IniFormat)
+        self._supported = updates.supported() and not fixture
         self._automatic = self.settings.value("updates/automatic", True, type=bool)
         self.timer = QTimer(self)
         self.timer.setInterval(3600000)
@@ -188,7 +191,7 @@ class Maintenance(QObject):
 
     @Property(bool, constant=True)
     def installSupported(self):
-        return updates.supported() and not self.fixture
+        return self._supported
 
     @Property(bool, notify=changed)
     def downloading(self):
@@ -217,7 +220,7 @@ class Maintenance(QObject):
             try:
                 success = json.loads(receipt.read_text())["success"]
                 self._status = "Update installed." if success else "Installation failed or was cancelled. Retry or use Release Details."
-            except (OSError, ValueError, KeyError):
+            except (OSError, ValueError, KeyError, TypeError):
                 self._status = "The previous update did not finish. Retry or use Release Details."
             receipt.unlink(missing_ok=True)
             self.changed.emit()
