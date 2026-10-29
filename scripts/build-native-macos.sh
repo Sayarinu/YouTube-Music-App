@@ -81,6 +81,6 @@ printf 'Built %s and %s\n' "$native_output/Tubify-macos-arm64.app" "$native_outp
 if [[ -n "${TUBIFY_SPARKLE_PRIVATE_KEY:-}" ]]; then
   # Fail closed if a secret was rotated without updating the bundled trust anchor.
   swift scripts/check-sparkle-key.swift packaging/macos-native/sparkle-public-key.txt
-  signature="$(printf '%s\n' "$TUBIFY_SPARKLE_PRIVATE_KEY" | "$sparkle/bin/sign_update" --ed-key-file - -p "$native_output/Tubify-${native_version}-macos-arm64.dmg")"
+  signature="$(printf '%s' "$TUBIFY_SPARKLE_PRIVATE_KEY" | tr -d '[:space:]' | "$sparkle/bin/sign_update" --ed-key-file - -p "$native_output/Tubify-${native_version}-macos-arm64.dmg")"
   "$native_python" scripts/native-appcast.py "$native_version" "$native_output/Tubify-${native_version}-macos-arm64.dmg" "$signature" "$native_output/appcast.xml"
 fi
