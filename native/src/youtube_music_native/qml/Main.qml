@@ -7,6 +7,22 @@ import "Theme.js" as Theme
 
 ApplicationWindow {
     id: window
+    property bool updateDismissed: false
+    Rectangle {
+        z: 100
+        anchors.top: parent.top; anchors.right: parent.right
+        anchors.margins: 16
+        width: Math.min(440, parent.width - 32); height: updateActions.implicitHeight + 24
+        radius: 8; color: themeState.surface; border.color: themeState.accent
+        visible: maintenanceState.updateAvailable && !window.updateDismissed
+        RowLayout {
+            id: updateActions
+            anchors.fill: parent; anchors.margins: 12
+            Label { text: "A new Tubify release is available"; Layout.fillWidth: true; wrapMode: Text.Wrap; color: themeState.foreground }
+            ThemeActionButton { objectName: "updateReview"; text: "Review"; onClicked: maintenanceSettings.open() }
+            ThemeActionButton { text: "Later"; onClicked: window.updateDismissed = true }
+        }
+    }
     visible: false
     width: appState.initialWidth
     height: appState.initialHeight
