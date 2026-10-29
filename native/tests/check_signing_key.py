@@ -27,7 +27,7 @@ def main():
             archive = Path(folder)/'empty.bin'
             archive.write_bytes(b'')
             signature = module.sign_update(sys.argv[1], archive, secret)
-            expected = bytes.fromhex('e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e0652249015555fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b')
+            expected = bytes.fromhex('e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e065224901555fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b')
             assert base64.b64decode(signature) == expected, 'Vendor signature differs from RFC 8032 test vector 1'
             print('Actual Sparkle signing and verification passed RFC 8032 test vector 1.')
     print('Signing-key guard passed valid, whitespace, malformed and mismatched test vectors.')
