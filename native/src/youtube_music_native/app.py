@@ -234,6 +234,12 @@ def main(argv=None):
     if not engine.rootObjects():
         return 1
     window = engine.rootObjects()[0]
+    if args.smoke_test and getattr(sys, "frozen", False):
+        if controller.maintenanceState.currentVersion == "unknown":
+            raise RuntimeError("Packaged version metadata is missing")
+        if sys.platform == "darwin":
+            from .macos_updates import MacUpdater
+            controller.maintenanceState._mac = MacUpdater(lambda: None)
     controller.maintenanceState.window = window
     controller.maintenanceState.prepare_restart = lambda: [callback() for callback in cleanup]
     if not (args.fixture or args.smoke_test or args.screenshot):
