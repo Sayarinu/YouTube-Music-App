@@ -69,7 +69,7 @@ def test_interrupted_download_leaves_no_executable(tmp_path):
     calls = []
     def opener(*args, **kwargs):
         calls.append(True)
-        return io.BytesIO(json.dumps(release()).encode()) if len(calls) == 1 else Broken()
+        return io.BytesIO(json.dumps(release(updates.sys.platform)).encode()) if len(calls) == 1 else Broken()
     with pytest.raises(OSError):
         updates.download('native-v0.2.0', tmp_path, opener=opener)
     assert not list(tmp_path.iterdir())
